@@ -11,7 +11,10 @@
       "Bash(npm --version:*)",
       "Bash(node --version:*)",
       "Bash(npm install:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "WebFetch(domain:play-t.art)",
+      "mcp__greeum__search_memory",
+      "Bash(dir /s \"E:\\\\PlayTartHome\\\\app\\\\admin\")"
     ]
   }
 }

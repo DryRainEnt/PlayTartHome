@@ -7,6 +7,7 @@ import Link from "next/link"
 import { PostActions } from "@/components/post-actions"
 import { ReplyList } from "@/components/reply-list"
 import { ReplyForm } from "@/components/reply-form"
+import { PageViewTracker } from "@/components/page-view-tracker"
 
 export default async function PostDetailPage({ params }: { params: Promise<{ postId: string }> }) {
   const { postId } = await params
@@ -27,11 +28,7 @@ export default async function PostDetailPage({ params }: { params: Promise<{ pos
     redirect("/forum")
   }
 
-  // Increment view count
-  await supabase
-    .from("forum_posts")
-    .update({ view_count: post.view_count + 1 })
-    .eq("id", postId)
+  // Note: view_count is now handled by PageViewTracker component
 
   // Fetch replies
   const { data: replies } = await supabase
@@ -55,6 +52,7 @@ export default async function PostDetailPage({ params }: { params: Promise<{ pos
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <PageViewTracker resourceType="forum_post" resourceId={postId} />
       <div className="mx-auto max-w-4xl">
         <Button variant="ghost" asChild className="mb-4">
           <Link href="/forum">← 목록으로</Link>

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
+import { PageViewTracker } from "@/components/page-view-tracker"
 
 export default async function ServiceDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -27,6 +28,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <PageViewTracker resourceType="service" resourceId={service.id} resourceSlug={slug} />
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <div className="mb-8 aspect-video w-full overflow-hidden rounded-lg bg-muted">

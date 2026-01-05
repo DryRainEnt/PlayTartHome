@@ -14,6 +14,7 @@ import {
   HardDrive,
   CheckCircle,
 } from "lucide-react"
+import { PageViewTracker } from "@/components/page-view-tracker"
 
 export default async function ProductDetailPage({
   params,
@@ -69,6 +70,7 @@ export default async function ProductDetailPage({
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <PageViewTracker resourceType="product" resourceId={product.id} resourceSlug={slug} />
       <Button variant="ghost" asChild className="mb-6">
         <Link href="/product">
           <ArrowLeft className="mr-2 h-4 w-4" />
