@@ -20,7 +20,12 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/outsourcing" className="text-muted-foreground hover:text-primary">
-                  아웃소싱
+                  외주
+                </Link>
+              </li>
+              <li>
+                <Link href="/product" className="text-muted-foreground hover:text-primary">
+                  제품
                 </Link>
               </li>
               <li>

@@ -4,7 +4,14 @@
       "Bash(gh auth:*)",
       "mcp__greeum__add_memory",
       "Bash(git add:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Next.js 프로젝트 기본 구조 추가\n\n- Next.js 16 + React 19 + TypeScript 설정\n- Supabase 연동 \\(인증, DB\\)\n- shadcn/ui 컴포넌트 풀세트\n- 페이지 구조:\n  - 인증 \\(로그인/회원가입\\)\n  - 강의 \\(목록/상세/구매/학습\\)\n  - 외주 \\(목록/상세\\)\n  - 게시판 \\(목록/상세/작성\\)\n  - 마이페이지\n  - 피드백\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Next.js 프로젝트 기본 구조 추가\n\n- Next.js 16 + React 19 + TypeScript 설정\n- Supabase 연동 \\(인증, DB\\)\n- shadcn/ui 컴포넌트 풀세트\n- 페이지 구조:\n  - 인증 \\(로그인/회원가입\\)\n  - 강의 \\(목록/상세/구매/학습\\)\n  - 외주 \\(목록/상세\\)\n  - 게시판 \\(목록/상세/작성\\)\n  - 마이페이지\n  - 피드백\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(pnpm install:*)",
+      "Bash(npm --version:*)",
+      "Bash(node --version:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }

@@ -10,25 +10,11 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Playtart - 크리에이티브 온라인 학습 플랫폼",
-  description: "디자인, 영상편집, 3D 모델링 등 실무 스킬을 전문가에게 배우세요",
-  generator: "v0.app",
+  title: "Playtart - 픽셀아트 강의 & 외주 플랫폼",
+  description: "픽셀아트, AI 웹사이트 제작, 창작자 생존 전략을 배우고, 게임 리소스 외주까지. 개인 창작자 중심의 미니 플랫폼.",
   icons: {
-    icon: [
-      {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/icon.svg",
-        type: "image/svg+xml",
-      },
-    ],
-    apple: "/apple-icon.png",
+    icon: "/PlayTartSplash2.png",
+    apple: "/PlayTartSplash2.png",
   },
 }
 

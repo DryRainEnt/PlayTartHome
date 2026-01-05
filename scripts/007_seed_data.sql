@@ -1,26 +1,22 @@
--- Seed course categories
+-- Seed course categories (플레이타르트 실제 강의 분야)
 insert into public.course_categories (name, slug, description) values
-  ('디자인', 'design', '그래픽 디자인, UI/UX, 일러스트레이션'),
-  ('영상 편집', 'video-editing', '프리미어 프로, 애프터 이펙트, 파이널 컷'),
-  ('3D 모델링', '3d-modeling', '블렌더, Cinema 4D, Maya'),
-  ('포토샵', 'photoshop', '사진 보정 및 합성'),
-  ('마케팅', 'marketing', '디지털 마케팅, SNS 마케팅')
+  ('픽셀아트', 'pixel-art', '픽셀아트 및 도트 게임 리소스 제작'),
+  ('AI 웹사이트 제작', 'ai-website', 'AI 활용 웹사이트 및 랜딩페이지 제작'),
+  ('창작자 생존기', 'creator-survival', '인디 창작자를 위한 멘탈 관리 및 생존 전략')
 on conflict (slug) do nothing;
 
--- Seed service categories
+-- Seed service categories (외주 서비스 분야)
 insert into public.service_categories (name, slug, description) values
-  ('로고 디자인', 'logo-design', '브랜드 로고 제작'),
-  ('영상 제작', 'video-production', '홍보 영상, 유튜브 영상'),
-  ('썸네일 제작', 'thumbnail-design', 'YouTube 썸네일'),
-  ('웹 디자인', 'web-design', '웹사이트 UI/UX 디자인'),
-  ('일러스트', 'illustration', '캐릭터, 배경 일러스트')
+  ('픽셀아트 리소스', 'pixel-art-resource', '게임용 픽셀아트 캐릭터, 타일셋, 애니메이션'),
+  ('도트 UI/UX', 'pixel-ui', '게임 UI, 아이콘, 인터페이스 디자인'),
+  ('랜딩페이지 제작', 'landing-page', '개인 브랜딩용 웹사이트 및 랜딩페이지')
 on conflict (slug) do nothing;
 
--- Seed forum categories
+-- Seed forum categories (커뮤니티 게시판)
 insert into public.forum_categories (name, slug, description, order_index) values
-  ('공지사항', 'announcements', 'Playtart 공지사항', 0),
-  ('자유게시판', 'free-board', '자유로운 주제의 게시판', 1),
-  ('질문과 답변', 'qna', '강의 및 서비스 관련 질문', 2),
-  ('포트폴리오', 'portfolio', '작품 공유 게시판', 3),
-  ('구인구직', 'jobs', '프리랜서 구인구직', 4)
+  ('공지사항', 'announcements', '플레이타르트 공지 및 운영 소통', 0),
+  ('실습 공유', 'practice', '강의 실습 결과물 공유', 1),
+  ('리뷰', 'reviews', '강의 및 서비스 리뷰', 2),
+  ('자유게시판', 'free-board', '자유로운 주제의 게시판', 3),
+  ('질문과 답변', 'qna', '강의 및 서비스 관련 질문', 4)
 on conflict (slug) do nothing;

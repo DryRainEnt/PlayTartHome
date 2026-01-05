@@ -5,6 +5,7 @@ import { Button } from "./ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import { Label } from "./ui/label"
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group"
+import { Checkbox } from "./ui/checkbox"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 
@@ -15,15 +16,33 @@ interface PurchaseFormProps {
 }
 
 export function PurchaseForm({ course, user, profile }: PurchaseFormProps) {
-  const [paymentMethod, setPaymentMethod] = useState("kakaopay")
+  const [paymentMethod, setPaymentMethod] = useState("card")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [agreeTerms, setAgreeTerms] = useState(false)
+  const [agreeRefund, setAgreeRefund] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
+  // 주문번호 생성
+  const generateOrderId = () => {
+    const date = new Date()
+    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, "")
+    const random = Math.random().toString(36).substring(2, 8).toUpperCase()
+    return `PT${dateStr}-${random}`
+  }
+
   const handlePurchase = async () => {
+    // 동의 확인
+    if (!agreeTerms || !agreeRefund) {
+      setError("이용약관과 환불정책에 동의해주세요")
+      return
+    }
+
     setIsLoading(true)
     setError(null)
+
+    const orderId = generateOrderId()
 
     try {
       // Create purchase record
@@ -35,15 +54,19 @@ export function PurchaseForm({ course, user, profile }: PurchaseFormProps) {
           amount_paid: course.price,
           payment_method: paymentMethod,
           status: "pending",
+          order_id: orderId,
         })
         .select()
         .single()
 
       if (purchaseError) throw purchaseError
 
-      // In a real implementation, integrate with actual payment gateway APIs
-      // For now, simulate a successful payment
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      // TODO: 토스페이먼츠 연동 시 여기서 결제창 호출
+      // const tossPayments = await loadTossPayments(clientKey)
+      // await tossPayments.requestPayment(paymentMethod, { ... })
+
+      // 현재는 모의 결제 처리
+      await new Promise((resolve) => setTimeout(resolve, 1500))
 
       // Update purchase status
       const { error: updateError } = await supabase
@@ -67,9 +90,10 @@ export function PurchaseForm({ course, user, profile }: PurchaseFormProps) {
 
   return (
     <div className="space-y-6">
+      {/* 주문 상품 */}
       <Card>
         <CardHeader>
-          <CardTitle>주문 정보</CardTitle>
+          <CardTitle>주문 상품</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-start gap-4">
@@ -92,6 +116,25 @@ export function PurchaseForm({ course, user, profile }: PurchaseFormProps) {
             </div>
             <div className="text-right">
               <p className="text-2xl font-bold text-primary">₩{course.price.toLocaleString()}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 구매자 정보 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>구매자 정보</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">이름</span>
+              <span className="font-medium">{profile?.full_name || profile?.display_name || "미설정"}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">이메일</span>
+              <span className="font-medium">{user.email}</span>
             </div>
           </div>
         </CardContent>
@@ -167,6 +210,45 @@ export function PurchaseForm({ course, user, profile }: PurchaseFormProps) {
         </CardContent>
       </Card>
 
+      {/* 약관 동의 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>약관 동의</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-start space-x-3">
+            <Checkbox
+              id="agreeTerms"
+              checked={agreeTerms}
+              onCheckedChange={(checked) => setAgreeTerms(checked === true)}
+            />
+            <div className="grid gap-1.5 leading-none">
+              <Label htmlFor="agreeTerms" className="cursor-pointer font-medium">
+                이용약관 동의 (필수)
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                서비스 이용약관에 동의합니다
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start space-x-3">
+            <Checkbox
+              id="agreeRefund"
+              checked={agreeRefund}
+              onCheckedChange={(checked) => setAgreeRefund(checked === true)}
+            />
+            <div className="grid gap-1.5 leading-none">
+              <Label htmlFor="agreeRefund" className="cursor-pointer font-medium">
+                환불정책 동의 (필수)
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                디지털 콘텐츠 특성상 수강 시작 후에는 환불이 제한됩니다
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {error && (
         <div className="rounded-lg border border-destructive bg-destructive/10 p-4 text-sm text-destructive">
           {error}
@@ -174,11 +256,16 @@ export function PurchaseForm({ course, user, profile }: PurchaseFormProps) {
       )}
 
       <div className="space-y-3">
-        <Button onClick={handlePurchase} disabled={isLoading} className="w-full" size="lg">
+        <Button
+          onClick={handlePurchase}
+          disabled={isLoading || !agreeTerms || !agreeRefund}
+          className="w-full"
+          size="lg"
+        >
           {isLoading ? "결제 진행 중..." : `₩${course.price.toLocaleString()} 결제하기`}
         </Button>
         <p className="text-center text-xs text-muted-foreground">
-          결제 진행 시 환불 정책 및 이용약관에 동의하는 것으로 간주됩니다
+          위 내용을 확인하였으며, 결제에 동의합니다
         </p>
       </div>
     </div>

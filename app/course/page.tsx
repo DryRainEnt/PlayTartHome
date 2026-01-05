@@ -3,20 +3,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
+import { ChevronLeft, ChevronRight, Search } from "lucide-react"
+import { EmailSubscriptionForm } from "@/components/email-subscription-form"
+
+const ITEMS_PER_PAGE = 9
 
 export default async function CoursePage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string; search?: string }>
+  searchParams: Promise<{ category?: string; search?: string; page?: string }>
 }) {
   const params = await searchParams
   const supabase = await createClient()
+  const currentPage = Number(params.page) || 1
+  const offset = (currentPage - 1) * ITEMS_PER_PAGE
 
   // Fetch categories
   const { data: categories } = await supabase.from("course_categories").select("*").order("created_at")
 
   // Build query
-  let query = supabase.from("courses").select("*").eq("is_published", true)
+  let query = supabase.from("courses").select("*", { count: "exact" }).eq("is_published", true)
 
   if (params.category) {
     const category = categories?.find((c) => c.slug === params.category)
@@ -29,7 +35,27 @@ export default async function CoursePage({
     query = query.ilike("title", `%${params.search}%`)
   }
 
-  const { data: courses } = await query.order("created_at", { ascending: false })
+  const { data: courses, count } = await query
+    .order("created_at", { ascending: false })
+    .range(offset, offset + ITEMS_PER_PAGE - 1)
+
+  const totalPages = Math.ceil((count || 0) / ITEMS_PER_PAGE)
+
+  // Get subscriber count for empty state
+  const { data: subscriberCount } = await supabase
+    .rpc("get_subscription_count", { sub_type: "new_course" })
+
+  // Get user email if logged in
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Build pagination URL
+  const buildUrl = (page: number) => {
+    const urlParams = new URLSearchParams()
+    if (params.category) urlParams.set("category", params.category)
+    if (params.search) urlParams.set("search", params.search)
+    urlParams.set("page", page.toString())
+    return `/course?${urlParams.toString()}`
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -40,7 +66,16 @@ export default async function CoursePage({
 
       {/* Search and Filter */}
       <div className="mb-8 flex flex-col gap-4 md:flex-row">
-        <Input placeholder="강의 검색..." className="md:max-w-md" />
+        <form action="/course" method="GET" className="relative md:max-w-md flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            name="search"
+            placeholder="강의 검색..."
+            defaultValue={params.search || ""}
+            className="pl-10"
+          />
+          {params.category && <input type="hidden" name="category" value={params.category} />}
+        </form>
         <div className="flex flex-wrap gap-2">
           <Button variant={!params.category ? "default" : "outline"} asChild>
             <Link href="/course">전체</Link>
@@ -99,10 +134,62 @@ export default async function CoursePage({
             </Link>
           ))}
         </div>
-      ) : (
+      ) : params.search || params.category ? (
         <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">강의를 찾을 수 없습니다</CardContent>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            검색 결과가 없습니다
+          </CardContent>
         </Card>
+      ) : (
+        <EmailSubscriptionForm
+          type="new_course"
+          userEmail={user?.email}
+          subscriberCount={subscriberCount || 0}
+        />
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-8 flex items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            asChild
+            disabled={currentPage <= 1}
+          >
+            <Link href={buildUrl(currentPage - 1)} aria-disabled={currentPage <= 1}>
+              <ChevronLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter(page => page === 1 || page === totalPages || Math.abs(page - currentPage) <= 2)
+            .map((page, idx, arr) => (
+              <span key={page} className="flex items-center">
+                {idx > 0 && arr[idx - 1] !== page - 1 && (
+                  <span className="px-2 text-muted-foreground">...</span>
+                )}
+                <Button
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="icon"
+                  asChild
+                >
+                  <Link href={buildUrl(page)}>{page}</Link>
+                </Button>
+              </span>
+            ))}
+
+          <Button
+            variant="outline"
+            size="icon"
+            asChild
+            disabled={currentPage >= totalPages}
+          >
+            <Link href={buildUrl(currentPage + 1)} aria-disabled={currentPage >= totalPages}>
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
       )}
     </div>
   )
