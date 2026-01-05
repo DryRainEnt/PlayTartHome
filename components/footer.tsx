@@ -53,20 +53,15 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="mb-4 font-semibold">회사</h4>
+            <h4 className="mb-4 font-semibold">약관 및 정책</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="#" className="text-muted-foreground hover:text-primary">
-                  회사소개
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="text-muted-foreground hover:text-primary">
+                <Link href="/terms" className="text-muted-foreground hover:text-primary">
                   이용약관
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-muted-foreground hover:text-primary">
+                <Link href="/privacy" className="text-muted-foreground hover:text-primary">
                   개인정보처리방침
                 </Link>
               </li>
