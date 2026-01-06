@@ -22,6 +22,13 @@ const portfolioImages = [
   { src: "/portfolio/Sol_Idle.gif", alt: "Sol", span: "col-span-2" },
 ]
 
+// 포트폴리오 유튜브 영상 - 3개 가로 한 줄 (2+2+2=6)
+const portfolioVideos = [
+  { videoId: "qRMVqMS3mv0", title: "게임 기획 어디서부터 시작해야 할지 모르겠다면?" },
+  { videoId: "xNljNP7K-ac", title: "픽셀아트 고수가 되려면 딱 세가지만 연습하세요" },
+  { videoId: "fxbJpKBYUE8", title: "바이브코딩 게임개발 활용팁 ~ 유니티편" },
+]
+
 // 피쳐드 콘텐츠
 const featuredContent = [
   {
@@ -132,6 +139,38 @@ export default async function HomePage() {
                   style={{ imageRendering: "pixelated" }}
                 />
               </div>
+            ))}
+            {/* YouTube 영상 썸네일 - 한 줄 3개 */}
+            {portfolioVideos.map((video, index) => (
+              <a
+                key={`video-${index}`}
+                href={`https://www.youtube.com/watch?v=${video.videoId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="col-span-2 relative flex items-center justify-center bg-muted/20 overflow-hidden group cursor-pointer"
+              >
+                <img
+                  src={`https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`}
+                  alt={video.title}
+                  className="min-h-full min-w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                {/* 재생 버튼 오버레이 */}
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
+                  <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                    <svg
+                      className="w-8 h-8 text-white ml-1"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
+                </div>
+                {/* 영상 제목 */}
+                <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/70 to-transparent">
+                  <p className="text-white text-sm font-medium truncate">{video.title}</p>
+                </div>
+              </a>
             ))}
           </div>
 
