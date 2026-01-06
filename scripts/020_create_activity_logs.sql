@@ -50,7 +50,6 @@ CREATE INDEX IF NOT EXISTS idx_activity_logs_user_id ON activity_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_activity_logs_action_type ON activity_logs(action_type);
 CREATE INDEX IF NOT EXISTS idx_activity_logs_resource ON activity_logs(resource_type, resource_id);
 CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_activity_logs_date ON activity_logs(DATE(created_at));
 
 -- RLS 정책
 ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
