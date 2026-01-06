@@ -126,15 +126,15 @@ export default async function HomePage() {
           {/* Featured Content Cards */}
           <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
             {featuredContent.map((item, index) => (
-              <Card key={index} className="relative overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1">
+              <Card key={index} className="relative overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 flex flex-col">
                 <div className="absolute top-3 left-3">
                   <span className="px-2 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary">
                     {item.type}
                   </span>
                 </div>
-                <CardHeader className="pt-12">
+                <CardHeader className="pt-12 flex-1">
                   <CardTitle className="text-xl">{item.title}</CardTitle>
-                  <CardDescription>{item.description}</CardDescription>
+                  <CardDescription className="line-clamp-2">{item.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Button asChild className="w-full">
