@@ -291,6 +291,38 @@ export default function TermsPage() {
           </CardContent>
         </Card>
 
+        <Card className="my-6">
+          <CardHeader>
+            <CardTitle>제14조 (사업자 정보)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-lg border p-4">
+              <div className="grid gap-2 text-sm">
+                <div className="flex gap-4">
+                  <span className="w-32 font-medium">상호</span>
+                  <span className="text-muted-foreground">플레이타르트</span>
+                </div>
+                <div className="flex gap-4">
+                  <span className="w-32 font-medium">대표자</span>
+                  <span className="text-muted-foreground">이건우</span>
+                </div>
+                <div className="flex gap-4">
+                  <span className="w-32 font-medium">사업자등록번호</span>
+                  <span className="text-muted-foreground">563-05-02993</span>
+                </div>
+                <div className="flex gap-4">
+                  <span className="w-32 font-medium">주소</span>
+                  <span className="text-muted-foreground">서울특별시 성북구 장위로19길 25, 2동 403호</span>
+                </div>
+                <div className="flex gap-4">
+                  <span className="w-32 font-medium">이메일</span>
+                  <span className="text-muted-foreground">support@play-t.art</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="my-6 border-primary">
           <CardHeader>
             <CardTitle>부칙</CardTitle>

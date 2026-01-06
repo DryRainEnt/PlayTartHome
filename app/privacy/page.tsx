@@ -239,8 +239,15 @@ export default function PrivacyPage() {
             </p>
             <div className="mt-4 rounded-lg border p-4">
               <p><strong>개인정보 보호책임자</strong></p>
-              <p className="text-muted-foreground">담당: Playtart 운영팀</p>
-              <p className="text-muted-foreground">이메일: privacy@play-t.art</p>
+              <p className="text-muted-foreground">성명: 이건우</p>
+              <p className="text-muted-foreground">이메일: support@play-t.art</p>
+            </div>
+            <div className="mt-4 rounded-lg border p-4">
+              <p><strong>사업자 정보</strong></p>
+              <p className="text-muted-foreground">상호: 플레이타르트</p>
+              <p className="text-muted-foreground">대표: 이건우</p>
+              <p className="text-muted-foreground">사업자등록번호: 563-05-02993</p>
+              <p className="text-muted-foreground">주소: 서울특별시 성북구 장위로19길 25, 2동 403호</p>
             </div>
             <p className="mt-4 text-sm text-muted-foreground">
               기타 개인정보 침해에 대한 신고나 상담이 필요하신 경우에는 아래 기관에 문의하시기 바랍니다.

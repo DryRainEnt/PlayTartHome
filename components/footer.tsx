@@ -69,8 +69,12 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 border-t pt-8 text-center text-sm text-muted-foreground">
-          <p>&copy; 2025 Playtart. All rights reserved.</p>
+        <div className="mt-8 border-t pt-8">
+          <div className="mb-4 text-xs text-muted-foreground">
+            <p>상호: 플레이타르트 | 대표: 이건우 | 사업자등록번호: 563-05-02993</p>
+            <p>주소: 서울특별시 성북구 장위로19길 25, 2동 403호 | 이메일: support@play-t.art</p>
+          </div>
+          <p className="text-center text-sm text-muted-foreground">&copy; 2025 Playtart. All rights reserved.</p>
         </div>
       </div>
     </footer>
