@@ -172,27 +172,27 @@ export function Header() {
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[280px]">
-              <SheetHeader>
+            <SheetContent side="right" className="w-[280px] p-0">
+              <SheetHeader className="px-6 py-4 border-b">
                 <SheetTitle>메뉴</SheetTitle>
               </SheetHeader>
-              <nav className="flex flex-col gap-4 mt-6">
+              <nav className="flex flex-col py-4">
                 {navLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="text-lg font-medium transition-colors hover:text-primary"
+                    className="px-6 py-3 text-lg font-medium transition-colors hover:text-primary hover:bg-muted"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     {link.label}
                   </Link>
                 ))}
-                <div className="border-t pt-4 mt-2">
+                <div className="border-t mt-4 pt-4 px-6">
                   {user ? (
-                    <>
+                    <div className="flex flex-col gap-3">
                       <Link
                         href="/my-page"
-                        className="block text-lg font-medium mb-4 hover:text-primary"
+                        className="py-2 text-lg font-medium hover:text-primary"
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         마이페이지
@@ -200,31 +200,31 @@ export function Header() {
                       {isAdmin && (
                         <Link
                           href="/admin"
-                          className="block text-lg font-medium mb-4 hover:text-primary"
+                          className="py-2 text-lg font-medium hover:text-primary"
                           onClick={() => setMobileMenuOpen(false)}
                         >
                           관리자
                         </Link>
                       )}
-                      <Button variant="outline" onClick={handleLogout} className="w-full">
+                      <Button variant="outline" onClick={handleLogout} className="w-full mt-2">
                         로그아웃
                       </Button>
-                    </>
+                    </div>
                   ) : (
-                    <>
+                    <div className="flex flex-col gap-3">
                       <Link
                         href="/auth/login"
-                        className="block text-lg font-medium mb-4 hover:text-primary"
+                        className="py-2 text-lg font-medium hover:text-primary"
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         로그인
                       </Link>
-                      <Button asChild className="w-full">
+                      <Button asChild className="w-full mt-2">
                         <Link href="/auth/sign-up" onClick={() => setMobileMenuOpen(false)}>
                           회원가입
                         </Link>
                       </Button>
-                    </>
+                    </div>
                   )}
                 </div>
               </nav>
