@@ -128,7 +128,7 @@ export default async function HomePage() {
             {featuredContent.map((item, index) => (
               <Card key={index} className="relative overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 flex flex-col">
                 <div className="absolute top-3 left-3">
-                  <span className="px-2 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary">
+                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-primary text-primary-foreground">
                     {item.type}
                   </span>
                 </div>
