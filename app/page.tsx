@@ -111,12 +111,12 @@ export default async function HomePage() {
       <section className="relative overflow-hidden bg-gradient-to-b from-primary/10 to-background py-16 md:py-24">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-3xl text-center mb-12">
-            <h1 className="mb-6 text-balance text-4xl font-bold tracking-tight md:text-5xl">
+            <h1 className="mb-6 text-balance text-4xl font-bold tracking-tight leading-tight md:text-5xl md:leading-snug">
               픽셀아트 강의 & 외주
               <br />
               <span className="text-primary">플레이타르트</span>
             </h1>
-            <p className="mb-8 text-pretty text-lg text-muted-foreground">
+            <p className="mb-8 text-pretty text-lg text-muted-foreground leading-relaxed">
               픽셀아트, AI 웹사이트 제작, 창작자 생존 전략까지.
               <br className="hidden sm:block" />
               개인 창작자 중심의 미니 플랫폼입니다.
