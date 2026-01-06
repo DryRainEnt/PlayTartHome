@@ -74,18 +74,18 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* 로고 */}
-        <Link href="/" className="flex items-center gap-1">
+        <Link href="/" className="flex items-center gap-1 min-w-[160px]">
           <img src="/PlayTartSplash2.png" alt="Playtart Icon" className="h-12 w-12" />
           <img src="/PlayTartSplash1.png" alt="Playtart" className="h-12 hidden sm:block" />
         </Link>
 
         {/* 데스크톱 네비게이션 */}
-        <nav className="hidden items-center gap-6 md:flex">
+        <nav className="hidden items-center gap-8 md:flex">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-medium transition-colors hover:text-primary"
+              className="text-base font-medium transition-colors hover:text-primary"
             >
               {link.label}
             </Link>
@@ -93,7 +93,7 @@ export function Header() {
         </nav>
 
         {/* 우측 아이콘/버튼 영역 */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 min-w-[160px] justify-end">
           {user ? (
             <>
               {/* 알림 아이콘 */}
