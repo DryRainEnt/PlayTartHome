@@ -6,6 +6,7 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { ChevronLeft, ChevronRight, Search, Download, ShoppingCart } from "lucide-react"
 import { EmailSubscriptionForm } from "@/components/email-subscription-form"
+import { PageViewTracker } from "@/components/page-view-tracker"
 
 const ITEMS_PER_PAGE = 12
 
@@ -208,6 +209,8 @@ export default async function ProductPage({
           </Button>
         </div>
       )}
+
+      <PageViewTracker pageName="product-list" />
     </div>
   )
 }

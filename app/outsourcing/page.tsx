@@ -5,6 +5,7 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { ChevronLeft, ChevronRight, Search } from "lucide-react"
 import { EmailSubscriptionForm } from "@/components/email-subscription-form"
+import { PageViewTracker } from "@/components/page-view-tracker"
 
 const ITEMS_PER_PAGE = 9
 
@@ -197,6 +198,8 @@ export default async function OutsourcingPage({
           </Button>
         </div>
       )}
+
+      <PageViewTracker pageName="outsourcing-list" />
     </div>
   )
 }

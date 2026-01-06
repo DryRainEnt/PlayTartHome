@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
+import { PageViewTracker } from "@/components/page-view-tracker"
 
 // YouTube RSS 피드에서 최신 영상 가져오기
 const YOUTUBE_CHANNEL_ID = "UC3foO9bhZJHkeROLdu0m2MQ"
@@ -331,6 +332,8 @@ export default async function HomePage() {
           </Card>
         </div>
       </section>
+
+      <PageViewTracker pageName="landing" />
     </div>
   )
 }

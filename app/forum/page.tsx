@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { Search, ChevronLeft, ChevronRight, MessageCircle, Eye, ThumbsUp, PenSquare } from "lucide-react"
+import { PageViewTracker } from "@/components/page-view-tracker"
 
 const ITEMS_PER_PAGE = 20
 
@@ -257,6 +258,8 @@ export default async function ForumPage({
           </CardContent>
         </Card>
       )}
+
+      <PageViewTracker pageName="forum-list" />
     </div>
   )
 }
