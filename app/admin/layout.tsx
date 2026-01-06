@@ -1,7 +1,7 @@
 import { requireAdmin } from "@/lib/admin"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { LayoutDashboard, BookOpen, Palette, Users, FileText, Settings, BarChart3 } from "lucide-react"
+import { LayoutDashboard, BookOpen, Palette, Users, FileText, Settings, BarChart3, Mail } from "lucide-react"
 
 export default async function AdminLayout({
   children,
@@ -15,6 +15,7 @@ export default async function AdminLayout({
     { href: "/admin/analytics", label: "통계 분석", icon: BarChart3 },
     { href: "/admin/courses", label: "강의 관리", icon: BookOpen },
     { href: "/admin/services", label: "외주 서비스 관리", icon: Palette },
+    { href: "/admin/subscribers", label: "구독자 관리", icon: Mail },
     { href: "/admin/users", label: "사용자 관리", icon: Users },
     { href: "/admin/posts", label: "게시글 관리", icon: FileText },
     { href: "/admin/settings", label: "설정", icon: Settings },
