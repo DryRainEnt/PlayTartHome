@@ -11,26 +11,33 @@ interface EmailSubscriptionFormProps {
   type: "new_course" | "new_service" | "newsletter"
   userEmail?: string
   subscriberCount?: number
+  hasContent?: boolean // 콘텐츠가 이미 있는 경우
 }
 
 const typeConfig = {
   new_course: {
     title: "준비 중인 강의가 곧 공개됩니다!",
+    titleAlt: "찾으시는 강의가 없다면?",
     subtitle: "새 강의를 가장 먼저 만나보세요",
+    subtitleAlt: "새 강의가 등록되면 알림을 받아보세요",
     buttonText: "강의 알림 신청",
     successText: "새 강의가 등록되면 알려드릴게요!",
     icon: "📚",
   },
   new_service: {
     title: "새로운 외주 서비스가 준비 중입니다!",
+    titleAlt: "찾으시는 서비스가 없다면?",
     subtitle: "새 서비스를 가장 먼저 확인하세요",
+    subtitleAlt: "새 서비스가 등록되면 알림을 받아보세요",
     buttonText: "서비스 알림 신청",
     successText: "새 서비스가 등록되면 알려드릴게요!",
     icon: "🎨",
   },
   newsletter: {
     title: "Playtart 소식을 받아보세요",
+    titleAlt: "Playtart 소식을 받아보세요",
     subtitle: "유용한 정보와 업데이트를 전달해드립니다",
+    subtitleAlt: "유용한 정보와 업데이트를 전달해드립니다",
     buttonText: "뉴스레터 구독",
     successText: "뉴스레터 구독이 완료되었습니다!",
     icon: "📮",
@@ -41,6 +48,7 @@ export function EmailSubscriptionForm({
   type,
   userEmail,
   subscriberCount,
+  hasContent = false,
 }: EmailSubscriptionFormProps) {
   const [email, setEmail] = useState(userEmail || "")
   const [isLoading, setIsLoading] = useState(false)
@@ -49,6 +57,8 @@ export function EmailSubscriptionForm({
   const supabase = createClient()
 
   const config = typeConfig[type]
+  const title = hasContent ? config.titleAlt : config.title
+  const subtitle = hasContent ? config.subtitleAlt : config.subtitle
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -121,8 +131,8 @@ export function EmailSubscriptionForm({
           </div>
 
           {/* Title */}
-          <h3 className="mb-2 text-xl font-bold">{config.title}</h3>
-          <p className="mb-6 text-muted-foreground">{config.subtitle}</p>
+          <h3 className="mb-2 text-xl font-bold">{title}</h3>
+          <p className="mb-6 text-muted-foreground">{subtitle}</p>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="mx-auto max-w-sm">

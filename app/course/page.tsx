@@ -135,19 +135,23 @@ export default async function CoursePage({
             </Link>
           ))}
         </div>
-      ) : params.search || params.category ? (
+      ) : (params.search || params.category) ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             검색 결과가 없습니다
           </CardContent>
         </Card>
-      ) : (
+      ) : null}
+
+      {/* Email Subscription */}
+      <div className="mt-8">
         <EmailSubscriptionForm
           type="new_course"
           userEmail={user?.email}
           subscriberCount={subscriberCount || 0}
+          hasContent={courses && courses.length > 0}
         />
-      )}
+      </div>
 
       {/* Pagination */}
       {totalPages > 1 && (

@@ -152,19 +152,23 @@ export default async function ProductPage({
             </Link>
           ))}
         </div>
-      ) : params.search || params.category ? (
+      ) : (params.search || params.category) ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             검색 결과가 없습니다
           </CardContent>
         </Card>
-      ) : (
+      ) : null}
+
+      {/* Email Subscription */}
+      <div className="mt-8">
         <EmailSubscriptionForm
           type="newsletter"
           userEmail={user?.email}
           subscriberCount={0}
+          hasContent={products && products.length > 0}
         />
-      )}
+      </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
