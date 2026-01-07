@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
-import { ChevronLeft, ChevronRight, Search } from "lucide-react"
+import { ChevronLeft, ChevronRight, Search, ExternalLink } from "lucide-react"
 import { EmailSubscriptionForm } from "@/components/email-subscription-form"
 import { PageViewTracker } from "@/components/page-view-tracker"
 
@@ -116,7 +116,12 @@ export default async function OutsourcingPage({
                       <span className="text-xs text-muted-foreground">⭐ {service.rating.toFixed(1)}</span>
                     )}
                   </div>
-                  <CardTitle className="line-clamp-2">{service.title}</CardTitle>
+                  <CardTitle className="line-clamp-2 flex items-center gap-1">
+                    {service.title}
+                    {service.external_url && (
+                      <ExternalLink className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                    )}
+                  </CardTitle>
                   <CardDescription className="line-clamp-2">{service.description}</CardDescription>
                 </CardHeader>
                 <CardContent>

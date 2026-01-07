@@ -30,6 +30,7 @@ interface ServiceFormProps {
     delivery_days: number | null
     revision_count: number | null
     is_published: boolean
+    external_url: string | null
   } | null
   categories: { id: string; name: string; slug: string }[]
 }
@@ -51,6 +52,7 @@ export function ServiceForm({ service, categories }: ServiceFormProps) {
     delivery_days: service?.delivery_days || null,
     revision_count: service?.revision_count || null,
     is_published: service?.is_published || false,
+    external_url: service?.external_url || "",
   })
 
   const generateSlug = (title: string) => {
@@ -82,6 +84,7 @@ export function ServiceForm({ service, categories }: ServiceFormProps) {
       const data = {
         ...formData,
         category_id: formData.category_id || null,
+        external_url: formData.external_url || null,
         provider_id: user.id,
       }
 
@@ -171,6 +174,20 @@ export function ServiceForm({ service, categories }: ServiceFormProps) {
                   onChange={(e) => setFormData((prev) => ({ ...prev, thumbnail_url: e.target.value }))}
                   placeholder="https://..."
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="external_url">외부 링크 (선택)</Label>
+                <Input
+                  id="external_url"
+                  type="url"
+                  value={formData.external_url}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, external_url: e.target.value }))}
+                  placeholder="https://kmong.com/gig/..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  크몽 등 외부 플랫폼 링크. 설정 시 상세 페이지 대신 외부로 이동합니다.
+                </p>
               </div>
             </CardContent>
           </Card>

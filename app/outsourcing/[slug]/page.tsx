@@ -10,10 +10,6 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
   const { slug } = await params
   const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
   // Fetch service
   const { data: service } = await supabase
     .from("services")
@@ -25,6 +21,30 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
   if (!service) {
     redirect("/outsourcing")
   }
+
+  // 외부 링크가 있으면 트래킹 후 리다이렉트
+  if (service.external_url) {
+    // 서버에서 직접 트래킹 기록
+    await supabase.from("activity_logs").insert({
+      action_type: "page_view",
+      resource_type: "service",
+      resource_id: service.id,
+      resource_slug: slug,
+      metadata: { redirected_to: service.external_url },
+    })
+
+    // view_count 증가
+    await supabase.rpc("increment_view_count", {
+      table_name: "services",
+      row_id: service.id,
+    })
+
+    redirect(service.external_url)
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   return (
     <div className="container mx-auto px-4 py-8">
