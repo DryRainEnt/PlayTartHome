@@ -22,10 +22,16 @@ export default async function SubscribersPage() {
   const supabase = await createClient()
 
   // 구독자 목록 조회
-  const { data: subscribers } = await supabase
+  const { data: subscribers, error } = await supabase
     .from("email_subscriptions")
     .select("*")
     .order("created_at", { ascending: false })
+
+  // 디버깅용 로그
+  if (error) {
+    console.error("Subscribers fetch error:", error)
+  }
+  console.log("Subscribers count:", subscribers?.length, "Data:", subscribers)
 
   // 타입별 카운트
   const typeCounts = {
