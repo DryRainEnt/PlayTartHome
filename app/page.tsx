@@ -77,11 +77,11 @@ const featuredContent = [
     cta: "의뢰하기",
   },
   {
-    type: "소개",
-    title: "이 사이트도 직접 만들었습니다",
-    description: "AI와 함께 나만의 플랫폼을 만드는 방법",
+    type: "강의",
+    title: "인디게임 개발",
+    description: "게임 기획부터 출시까지, 1인 개발자를 위한 가이드",
     href: "/course",
-    cta: "자세히 보기",
+    cta: "강의 보러가기",
   },
 ]
 
