@@ -22,24 +22,10 @@ export default async function SubscribersPage() {
   const supabase = await createClient()
 
   // 구독자 목록 조회
-  const { data: subscribers, error } = await supabase
+  const { data: subscribers } = await supabase
     .from("email_subscriptions")
     .select("*")
     .order("created_at", { ascending: false })
-
-  // 현재 유저 확인
-  const { data: { user } } = await supabase.auth.getUser()
-
-  // is_admin 함수 테스트
-  const { data: isAdminResult } = await supabase.rpc('is_admin')
-
-  // 디버깅용 로그
-  console.log("Current user:", user?.id, user?.email)
-  console.log("is_admin() result:", isAdminResult)
-  if (error) {
-    console.error("Subscribers fetch error:", error)
-  }
-  console.log("Subscribers count:", subscribers?.length)
 
   // 타입별 카운트
   const typeCounts = {
@@ -56,17 +42,6 @@ export default async function SubscribersPage() {
         <h1 className="text-3xl font-bold">구독자 관리</h1>
         <p className="text-muted-foreground">이메일 알림 구독자 관리 및 발송</p>
       </div>
-
-      {/* 디버그 정보 (나중에 삭제) */}
-      <Card className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
-        <CardContent className="py-4 text-sm">
-          <p><strong>Debug:</strong></p>
-          <p>User: {user?.email || "없음"} ({user?.id || "no id"})</p>
-          <p>is_admin(): {String(isAdminResult)}</p>
-          <p>Subscribers: {subscribers?.length ?? "null"}</p>
-          {error && <p className="text-red-600">Error: {error.message}</p>}
-        </CardContent>
-      </Card>
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
