@@ -59,7 +59,7 @@ export function VisitorChart({ data }: VisitorChartProps) {
           type="monotone"
           dataKey="visitors"
           name="방문자"
-          stroke="hsl(var(--primary))"
+          stroke="var(--primary)"
           strokeWidth={2}
           dot={false}
         />
@@ -67,7 +67,7 @@ export function VisitorChart({ data }: VisitorChartProps) {
           type="monotone"
           dataKey="pageViews"
           name="페이지뷰"
-          stroke="hsl(var(--chart-2))"
+          stroke="var(--chart-2)"
           strokeWidth={2}
           dot={false}
         />
@@ -75,7 +75,7 @@ export function VisitorChart({ data }: VisitorChartProps) {
           type="monotone"
           dataKey="signups"
           name="신규가입"
-          stroke="hsl(var(--chart-3))"
+          stroke="var(--chart-3)"
           strokeWidth={2}
           dot={false}
         />
