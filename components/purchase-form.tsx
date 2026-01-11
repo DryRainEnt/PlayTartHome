@@ -1,13 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "./ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import { Label } from "./ui/label"
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group"
 import { Checkbox } from "./ui/checkbox"
 import { createClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
+import { loadTossPayments, TossPaymentsWidgets } from "@tosspayments/tosspayments-sdk"
+import { Construction } from "lucide-react"
+import Link from "next/link"
 
 interface PurchaseFormProps {
   course: any
@@ -15,13 +17,17 @@ interface PurchaseFormProps {
   profile: any
 }
 
+const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || ""
+const TOSS_ENABLED = process.env.NEXT_PUBLIC_TOSS_ENABLED === "true"
+
 export function PurchaseForm({ course, user, profile }: PurchaseFormProps) {
-  const [paymentMethod, setPaymentMethod] = useState("card")
+  const [paymentMethod, setPaymentMethod] = useState("카드")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [agreeTerms, setAgreeTerms] = useState(false)
   const [agreeRefund, setAgreeRefund] = useState(false)
-  const router = useRouter()
+  const [widgets, setWidgets] = useState<TossPaymentsWidgets | null>(null)
+  const [isWidgetReady, setIsWidgetReady] = useState(false)
   const supabase = createClient()
 
   // 주문번호 생성
@@ -32,8 +38,60 @@ export function PurchaseForm({ course, user, profile }: PurchaseFormProps) {
     return `PT${dateStr}-${random}`
   }
 
+  const [orderId] = useState(generateOrderId())
+
+  // 토스페이먼츠 위젯 초기화
+  useEffect(() => {
+    const initTossPayments = async () => {
+      if (!TOSS_CLIENT_KEY) {
+        setError("결제 시스템 설정이 필요합니다")
+        return
+      }
+
+      try {
+        const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY)
+        const customerKey = `customer_${user.id.replace(/-/g, "").substring(0, 20)}`
+
+        const widgetsInstance = tossPayments.widgets({
+          customerKey,
+        })
+
+        // 결제 금액 설정
+        await widgetsInstance.setAmount({
+          currency: "KRW",
+          value: course.price,
+        })
+
+        // 결제 방법 위젯 렌더링
+        await widgetsInstance.renderPaymentMethods({
+          selector: "#payment-method-widget",
+          variantKey: "DEFAULT",
+        })
+
+        // 약관 위젯 렌더링
+        await widgetsInstance.renderAgreement({
+          selector: "#agreement-widget",
+          variantKey: "AGREEMENT",
+        })
+
+        setWidgets(widgetsInstance)
+        setIsWidgetReady(true)
+      } catch (err) {
+        console.error("TossPayments init error:", err)
+        setError("결제 시스템 초기화에 실패했습니다")
+      }
+    }
+
+    initTossPayments()
+  }, [user.id, course.price])
+
   const handlePurchase = async () => {
-    // 동의 확인
+    if (!widgets) {
+      setError("결제 시스템이 준비되지 않았습니다")
+      return
+    }
+
+    // 내부 약관 동의 확인
     if (!agreeTerms || !agreeRefund) {
       setError("이용약관과 환불정책에 동의해주세요")
       return
@@ -42,10 +100,8 @@ export function PurchaseForm({ course, user, profile }: PurchaseFormProps) {
     setIsLoading(true)
     setError(null)
 
-    const orderId = generateOrderId()
-
     try {
-      // Create purchase record
+      // 1. DB에 pending 상태로 구매 기록 생성
       const { data: purchase, error: purchaseError } = await supabase
         .from("course_purchases")
         .insert({
@@ -61,31 +117,54 @@ export function PurchaseForm({ course, user, profile }: PurchaseFormProps) {
 
       if (purchaseError) throw purchaseError
 
-      // TODO: 토스페이먼츠 연동 시 여기서 결제창 호출
-      // const tossPayments = await loadTossPayments(clientKey)
-      // await tossPayments.requestPayment(paymentMethod, { ... })
-
-      // 현재는 모의 결제 처리
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      // Update purchase status
-      const { error: updateError } = await supabase
-        .from("course_purchases")
-        .update({
-          status: "completed",
-          payment_id: `MOCK_${Date.now()}`,
-        })
-        .eq("id", purchase.id)
-
-      if (updateError) throw updateError
-
-      // Redirect to success page
-      router.push(`/course/${course.slug}/purchase/success`)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "결제에 실패했습니다")
+      // 2. 토스페이먼츠 결제 요청
+      await widgets.requestPayment({
+        orderId: orderId,
+        orderName: course.title,
+        successUrl: `${window.location.origin}/course/${course.slug}/purchase/success`,
+        failUrl: `${window.location.origin}/course/${course.slug}/purchase?error=payment_failed`,
+        customerEmail: user.email,
+        customerName: profile?.full_name || profile?.display_name || "고객",
+      })
+    } catch (err: any) {
+      // 사용자가 결제창을 닫은 경우
+      if (err.code === "USER_CANCEL") {
+        setError("결제가 취소되었습니다")
+      } else {
+        setError(err instanceof Error ? err.message : "결제 요청에 실패했습니다")
+      }
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // 결제 시스템 비활성화 상태
+  if (!TOSS_ENABLED) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="py-16">
+            <div className="text-center space-y-4">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                <Construction className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold">결제 시스템 준비 중</h2>
+                <p className="mt-2 text-muted-foreground">
+                  결제 시스템을 준비하고 있습니다.<br />
+                  빠른 시일 내에 오픈할 예정이니 조금만 기다려주세요!
+                </p>
+              </div>
+              <div className="pt-4">
+                <Button variant="outline" asChild>
+                  <Link href={`/course/${course.slug}`}>강의 페이지로 돌아가기</Link>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -136,84 +215,44 @@ export function PurchaseForm({ course, user, profile }: PurchaseFormProps) {
               <span className="text-muted-foreground">이메일</span>
               <span className="font-medium">{user.email}</span>
             </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">주문번호</span>
+              <span className="font-mono text-xs">{orderId}</span>
+            </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* 토스페이먼츠 결제 위젯 */}
       <Card>
         <CardHeader>
           <CardTitle>결제 방법</CardTitle>
           <CardDescription>원하시는 결제 방법을 선택하세요</CardDescription>
         </CardHeader>
         <CardContent>
-          <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3 rounded-lg border p-4">
-                <RadioGroupItem value="kakaopay" id="kakaopay" />
-                <Label htmlFor="kakaopay" className="flex flex-1 cursor-pointer items-center gap-2">
-                  <span className="text-lg">💛</span>
-                  <span className="font-medium">카카오페이</span>
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-3 rounded-lg border p-4">
-                <RadioGroupItem value="tosspay" id="tosspay" />
-                <Label htmlFor="tosspay" className="flex flex-1 cursor-pointer items-center gap-2">
-                  <span className="text-lg">💳</span>
-                  <span className="font-medium">토스페이</span>
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-3 rounded-lg border p-4">
-                <RadioGroupItem value="naverpay" id="naverpay" />
-                <Label htmlFor="naverpay" className="flex flex-1 cursor-pointer items-center gap-2">
-                  <span className="text-lg">💚</span>
-                  <span className="font-medium">네이버페이</span>
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-3 rounded-lg border p-4">
-                <RadioGroupItem value="card" id="card" />
-                <Label htmlFor="card" className="flex flex-1 cursor-pointer items-center gap-2">
-                  <span className="text-lg">💳</span>
-                  <span className="font-medium">신용카드</span>
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-3 rounded-lg border p-4">
-                <RadioGroupItem value="bank" id="bank" />
-                <Label htmlFor="bank" className="flex flex-1 cursor-pointer items-center gap-2">
-                  <span className="text-lg">🏦</span>
-                  <span className="font-medium">무통장입금</span>
-                </Label>
-              </div>
+          <div id="payment-method-widget" className="w-full" />
+          {!isWidgetReady && (
+            <div className="flex items-center justify-center py-8 text-muted-foreground">
+              결제 시스템 로딩 중...
             </div>
-          </RadioGroup>
+          )}
         </CardContent>
       </Card>
 
+      {/* 토스페이먼츠 약관 동의 위젯 */}
       <Card>
         <CardHeader>
-          <CardTitle>최종 결제 금액</CardTitle>
+          <CardTitle>결제 약관 동의</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>강의 금액</span>
-              <span>₩{course.price.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between border-t pt-2 text-lg font-bold">
-              <span>총 결제 금액</span>
-              <span className="text-primary">₩{course.price.toLocaleString()}</span>
-            </div>
-          </div>
+          <div id="agreement-widget" className="w-full" />
         </CardContent>
       </Card>
 
-      {/* 약관 동의 */}
+      {/* 서비스 약관 동의 */}
       <Card>
         <CardHeader>
-          <CardTitle>약관 동의</CardTitle>
+          <CardTitle>서비스 약관 동의</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-start space-x-3">
@@ -249,6 +288,24 @@ export function PurchaseForm({ course, user, profile }: PurchaseFormProps) {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>최종 결제 금액</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>강의 금액</span>
+              <span>₩{course.price.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between border-t pt-2 text-lg font-bold">
+              <span>총 결제 금액</span>
+              <span className="text-primary">₩{course.price.toLocaleString()}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {error && (
         <div className="rounded-lg border border-destructive bg-destructive/10 p-4 text-sm text-destructive">
           {error}
@@ -258,7 +315,7 @@ export function PurchaseForm({ course, user, profile }: PurchaseFormProps) {
       <div className="space-y-3">
         <Button
           onClick={handlePurchase}
-          disabled={isLoading || !agreeTerms || !agreeRefund}
+          disabled={isLoading || !isWidgetReady || !agreeTerms || !agreeRefund}
           className="w-full"
           size="lg"
         >
