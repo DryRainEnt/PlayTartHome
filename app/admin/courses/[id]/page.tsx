@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { CourseForm } from "./course-form"
+import { CurriculumEditor } from "./curriculum-editor"
 
 export default async function EditCoursePage({
   params,
@@ -18,6 +19,8 @@ export default async function EditCoursePage({
 
   // Fetch course if editing
   let course = null
+  let sections: any[] = []
+
   if (id !== "new") {
     const { data } = await supabase
       .from("courses")
@@ -29,6 +32,23 @@ export default async function EditCoursePage({
       redirect("/admin/courses")
     }
     course = data
+
+    // Fetch sections with lessons
+    const { data: sectionsData } = await supabase
+      .from("course_sections")
+      .select(`
+        *,
+        lessons:course_lessons(*)
+      `)
+      .eq("course_id", id)
+      .order("order_index")
+
+    if (sectionsData) {
+      sections = sectionsData.map(section => ({
+        ...section,
+        lessons: section.lessons?.sort((a: any, b: any) => a.order_index - b.order_index) || [],
+      }))
+    }
   }
 
   return (
@@ -42,7 +62,14 @@ export default async function EditCoursePage({
         </p>
       </div>
 
-      <CourseForm course={course} categories={categories || []} />
+      <div className="space-y-6">
+        <CourseForm course={course} categories={categories || []} />
+
+        {/* 기존 강의인 경우에만 커리큘럼 편집 표시 */}
+        {course && (
+          <CurriculumEditor courseId={course.id} initialSections={sections} />
+        )}
+      </div>
     </div>
   )
 }
