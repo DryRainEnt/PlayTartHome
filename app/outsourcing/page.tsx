@@ -94,9 +94,63 @@ export default async function OutsourcingPage({
       {/* Service Grid */}
       {services && services.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {services.map((service) => (
-            <Link key={service.id} href={`/outsourcing/${service.slug}`}>
-              <Card className="h-full transition-shadow hover:shadow-lg">
+          {services.map((service) => {
+            // 외부 링크가 있으면 API 리다이렉트 라우트 사용
+            const href = service.external_url
+              ? `/api/redirect/service/${service.slug}`
+              : `/outsourcing/${service.slug}`
+
+            return service.external_url ? (
+              <a key={service.id} href={href} target="_blank" rel="noopener noreferrer">
+                <Card className="h-full transition-shadow hover:shadow-lg">
+                  <div className="aspect-video w-full overflow-hidden rounded-t-lg bg-muted">
+                    {service.thumbnail_url ? (
+                      <img
+                        src={service.thumbnail_url || "/placeholder.svg"}
+                        alt={service.title}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                        서비스 이미지
+                      </div>
+                    )}
+                  </div>
+                  <CardHeader>
+                    <div className="mb-2 flex items-center justify-between">
+                      {service.rating > 0 && (
+                        <span className="text-xs text-muted-foreground">⭐ {service.rating.toFixed(1)}</span>
+                      )}
+                    </div>
+                    <CardTitle className="line-clamp-2 flex items-center gap-1">
+                      {service.title}
+                      <ExternalLink className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                    </CardTitle>
+                    <CardDescription className="line-clamp-2">{service.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        {service.provider?.display_name || service.provider?.full_name}
+                      </span>
+                      <div className="text-right">
+                        {service.price_min && service.price_max ? (
+                          <span className="text-lg font-bold text-primary">
+                            ₩{service.price_min.toLocaleString()} - ₩{service.price_max.toLocaleString()}
+                          </span>
+                        ) : service.price_min ? (
+                          <span className="text-lg font-bold text-primary">₩{service.price_min.toLocaleString()}~</span>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">가격 문의</span>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </a>
+            ) : (
+              <Link key={service.id} href={href}>
+                <Card className="h-full transition-shadow hover:shadow-lg">
                 <div className="aspect-video w-full overflow-hidden rounded-t-lg bg-muted">
                   {service.thumbnail_url ? (
                     <img
@@ -144,7 +198,8 @@ export default async function OutsourcingPage({
                 </CardContent>
               </Card>
             </Link>
-          ))}
+            )
+          })}
         </div>
       ) : (params.search || params.category) ? (
         <Card>

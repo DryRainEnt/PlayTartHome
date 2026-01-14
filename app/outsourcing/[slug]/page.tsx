@@ -5,49 +5,26 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { PageViewTracker } from "@/components/page-view-tracker"
-import { ExternalRedirect } from "@/components/external-redirect"
 
 export default async function ServiceDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const supabase = await createClient()
 
   // Fetch service
-  const { data: service, error } = await supabase
+  const { data: service } = await supabase
     .from("services")
     .select("*, provider:profiles!services_provider_id_fkey(*), category:service_categories(*)")
     .eq("slug", slug)
     .eq("is_published", true)
     .single()
 
-  // 디버깅: 서버 로그
-  console.log("[ServiceDetail] slug:", slug)
-  console.log("[ServiceDetail] service:", service?.id, service?.external_url)
-  console.log("[ServiceDetail] error:", error)
-
   if (!service) {
-    console.log("[ServiceDetail] No service found, redirecting to /outsourcing")
     redirect("/outsourcing")
   }
 
-  // 외부 링크가 있으면 트래킹 후 리다이렉트
+  // 외부 링크가 있으면 API 리다이렉트 라우트로 보냄 (트래킹 포함)
   if (service.external_url) {
-    // 서버에서 직접 트래킹 기록
-    await supabase.from("activity_logs").insert({
-      action_type: "page_view",
-      resource_type: "service",
-      resource_id: service.id,
-      resource_slug: slug,
-      metadata: { redirected_to: service.external_url },
-    })
-
-    // view_count 증가
-    await supabase.rpc("increment_view_count", {
-      table_name: "services",
-      row_id: service.id,
-    })
-
-    // 클라이언트 사이드에서 외부 URL로 리다이렉트
-    return <ExternalRedirect url={service.external_url} />
+    redirect(`/api/redirect/service/${slug}`)
   }
 
   const {
