@@ -12,14 +12,20 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
   const supabase = await createClient()
 
   // Fetch service
-  const { data: service } = await supabase
+  const { data: service, error } = await supabase
     .from("services")
     .select("*, provider:profiles!services_provider_id_fkey(*), category:service_categories(*)")
     .eq("slug", slug)
     .eq("is_published", true)
     .single()
 
+  // 디버깅: 서버 로그
+  console.log("[ServiceDetail] slug:", slug)
+  console.log("[ServiceDetail] service:", service?.id, service?.external_url)
+  console.log("[ServiceDetail] error:", error)
+
   if (!service) {
+    console.log("[ServiceDetail] No service found, redirecting to /outsourcing")
     redirect("/outsourcing")
   }
 
