@@ -241,6 +241,7 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
       onMouseLeave={() => isPlaying && setShowControls(false)}
     >
       {ReactPlayer && (
+        <div className="absolute inset-0 z-0">
         <ReactPlayer
           ref={playerRef}
           url={src}
@@ -278,18 +279,22 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
             },
           }}
         />
+        </div>
       )}
 
-      {/* Click overlay to toggle play */}
-      <div
-        className="absolute inset-0 cursor-pointer"
-        onClick={togglePlay}
-      />
+      {/* Click overlay - YouTube iframe 위에 표시하지 않음 (pointer-events로 제어) */}
+      {isReady && (
+        <div
+          className="absolute inset-0 z-10 cursor-pointer"
+          style={{ pointerEvents: isPlaying ? "none" : "auto" }}
+          onClick={togglePlay}
+        />
+      )}
 
       {/* Play/Pause center overlay */}
       {!isPlaying && isReady && (
         <div
-          className="absolute inset-0 flex items-center justify-center pointer-events-none"
+          className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none"
         >
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
             <Play className="h-10 w-10 text-white ml-1" fill="white" />
@@ -297,16 +302,16 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
         </div>
       )}
 
-      {/* Loading overlay */}
+      {/* Loading overlay - pointer-events none으로 iframe 초기화 방해 안함 */}
       {(!ReactPlayer || !isReady) && (
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
           <div className="h-12 w-12 border-4 border-white/30 border-t-white rounded-full animate-spin" />
         </div>
       )}
 
       {/* Controls */}
       <div
-        className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity duration-300 ${
+        className={`absolute bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity duration-300 ${
           showControls || !isPlaying ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
       >
