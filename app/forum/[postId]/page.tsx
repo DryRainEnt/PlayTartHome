@@ -8,6 +8,7 @@ import { PostActions } from "@/components/post-actions"
 import { ReplyList } from "@/components/reply-list"
 import { ReplyForm } from "@/components/reply-form"
 import { PageViewTracker } from "@/components/page-view-tracker"
+import { MarkdownContent } from "@/components/markdown-content"
 
 export default async function PostDetailPage({ params }: { params: Promise<{ postId: string }> }) {
   const { postId } = await params
@@ -75,7 +76,7 @@ export default async function PostDetailPage({ params }: { params: Promise<{ pos
             </div>
           </CardHeader>
           <CardContent>
-            <div className="prose mb-6 max-w-none whitespace-pre-wrap">{post.content}</div>
+            <MarkdownContent content={post.content} className="mb-6" />
 
             <PostActions postId={postId} userId={user?.id} userLiked={userLiked} likeCount={post.like_count} />
           </CardContent>
