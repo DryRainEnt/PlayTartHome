@@ -39,10 +39,12 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
 
   // 클라이언트에서만 react-player 로드
   useEffect(() => {
+    console.log("[VideoPlayer] Loading react-player, src:", src)
     import("react-player").then((mod) => {
+      console.log("[VideoPlayer] react-player loaded")
       setReactPlayer(() => mod.default)
     })
-  }, [])
+  }, [src])
 
   // Auto-hide controls
   const resetControlsTimeout = useCallback(() => {
@@ -146,6 +148,7 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
   }, [])
 
   const handleReady = () => {
+    console.log("[VideoPlayer] Player ready")
     setIsReady(true)
   }
 
@@ -253,7 +256,9 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
           onEnded={handleEnded}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
-          onError={(e) => console.error("ReactPlayer error:", e)}
+          onError={(e, data) => console.error("[VideoPlayer] Error:", e, data)}
+          onBuffer={() => console.log("[VideoPlayer] Buffering...")}
+          onBufferEnd={() => console.log("[VideoPlayer] Buffer end")}
           config={{
             youtube: {
               playerVars: {
