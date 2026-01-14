@@ -5,6 +5,7 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { PageViewTracker } from "@/components/page-view-tracker"
+import { ExternalRedirect } from "@/components/external-redirect"
 
 export default async function ServiceDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -39,7 +40,8 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
       row_id: service.id,
     })
 
-    redirect(service.external_url)
+    // 클라이언트 사이드에서 외부 URL로 리다이렉트
+    return <ExternalRedirect url={service.external_url} />
   }
 
   const {
