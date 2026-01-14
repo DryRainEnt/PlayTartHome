@@ -87,7 +87,13 @@ export async function POST(request: NextRequest) {
               <h1 style="color: #F7B100; margin: 0;">Playtart</h1>
             </div>
             <div style="background: #f9f9f9; border-radius: 8px; padding: 24px; margin-bottom: 20px;">
-              ${content.replace(/\n/g, "<br>")}
+              ${content
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;")
+                .replace(/\n/g, "<br>")}
             </div>
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
               <p style="font-size: 12px; color: #666;">
