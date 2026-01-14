@@ -83,23 +83,8 @@ export function PurchaseForm({ course, user, profile }: PurchaseFormProps) {
     setError(null)
 
     try {
-      // 1. DB에 pending 상태로 구매 기록 생성
-      const { data: purchase, error: purchaseError } = await supabase
-        .from("course_purchases")
-        .insert({
-          user_id: user.id,
-          course_id: course.id,
-          amount_paid: course.price,
-          payment_method: "카드",
-          status: "pending",
-          order_id: orderId,
-        })
-        .select()
-        .single()
-
-      if (purchaseError) throw purchaseError
-
-      // 2. 토스페이먼츠 결제 요청 (API 개별 연동 - 카드/간편결제 통합결제창)
+      // 토스페이먼츠 결제 요청 (사용자 클릭 직후 바로 호출해야 팝업 차단 안 됨)
+      // DB 저장은 success 페이지에서 처리
       await payment.requestPayment({
         method: "CARD",
         amount: {
@@ -108,7 +93,7 @@ export function PurchaseForm({ course, user, profile }: PurchaseFormProps) {
         },
         orderId: orderId,
         orderName: course.title,
-        successUrl: `${window.location.origin}/course/${course.slug}/purchase/success`,
+        successUrl: `${window.location.origin}/course/${course.slug}/purchase/success?courseId=${course.id}&userId=${user.id}&amount=${course.price}`,
         failUrl: `${window.location.origin}/course/${course.slug}/purchase?error=payment_failed`,
         customerEmail: user.email,
         customerName: profile?.full_name || profile?.display_name || "고객",

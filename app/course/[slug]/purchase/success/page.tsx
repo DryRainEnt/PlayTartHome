@@ -35,10 +35,16 @@ export default async function PurchaseSuccessPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ paymentKey?: string; orderId?: string; amount?: string }>
+  searchParams: Promise<{
+    paymentKey?: string
+    orderId?: string
+    amount?: string
+    courseId?: string
+    userId?: string
+  }>
 }) {
   const { slug } = await params
-  const { paymentKey, orderId, amount } = await searchParams
+  const { paymentKey, orderId, amount, courseId, userId } = await searchParams
   const supabase = await createClient()
 
   const {
@@ -62,63 +68,47 @@ export default async function PurchaseSuccessPage({
   if (paymentKey && orderId && amount) {
     const amountNumber = parseInt(amount, 10)
 
-    // 1. 먼저 pending 상태의 구매 기록 확인
-    const { data: pendingPurchase } = await supabase
+    // 이미 처리된 주문인지 확인
+    const { data: existingPurchase } = await supabase
       .from("course_purchases")
       .select("*")
       .eq("order_id", orderId)
-      .eq("status", "pending")
       .single()
 
-    if (!pendingPurchase) {
-      // 이미 처리된 주문인지 확인
-      const { data: existingPurchase } = await supabase
-        .from("course_purchases")
-        .select("*")
-        .eq("order_id", orderId)
-        .eq("status", "completed")
-        .single()
-
-      if (existingPurchase) {
-        // 이미 완료된 주문 - 정상 표시
+    if (existingPurchase) {
+      // 이미 존재하는 주문
+      if (existingPurchase.status === "completed") {
         purchase = existingPurchase
       } else {
-        paymentError = "구매 기록을 찾을 수 없습니다"
+        paymentError = "이미 처리 중인 주문입니다"
       }
     } else {
-      // 금액 검증
-      if (pendingPurchase.amount_paid !== amountNumber) {
-        paymentError = "결제 금액이 일치하지 않습니다"
+      // 새 주문 - 토스페이먼츠 결제 승인
+      const result = await confirmPayment(paymentKey, orderId, amountNumber)
+
+      if (!result.ok) {
+        paymentError = result.data.message || "결제 승인에 실패했습니다"
       } else {
-        // 2. 토스페이먼츠 결제 승인
-        const result = await confirmPayment(paymentKey, orderId, amountNumber)
+        // 결제 승인 성공 - 구매 기록 생성
+        const { data: newPurchase, error: insertError } = await supabase
+          .from("course_purchases")
+          .insert({
+            user_id: user.id,
+            course_id: course.id,
+            amount_paid: amountNumber,
+            payment_method: result.data.method || "카드",
+            status: "completed",
+            order_id: orderId,
+            payment_id: paymentKey,
+          })
+          .select()
+          .single()
 
-        if (!result.ok) {
-          paymentError = result.data.message || "결제 승인에 실패했습니다"
-
-          // 결제 실패 시 상태 업데이트
-          await supabase
-            .from("course_purchases")
-            .update({ status: "failed" })
-            .eq("id", pendingPurchase.id)
+        if (insertError) {
+          console.error("Insert error:", insertError)
+          paymentError = "구매 기록 저장에 실패했습니다"
         } else {
-          // 3. 결제 완료 상태로 업데이트
-          const { data: updatedPurchase, error: updateError } = await supabase
-            .from("course_purchases")
-            .update({
-              status: "completed",
-              payment_id: paymentKey,
-              payment_method: result.data.method || "card",
-            })
-            .eq("id", pendingPurchase.id)
-            .select()
-            .single()
-
-          if (updateError) {
-            paymentError = "구매 기록 업데이트에 실패했습니다"
-          } else {
-            purchase = updatedPurchase
-          }
+          purchase = newPurchase
         }
       }
     }
