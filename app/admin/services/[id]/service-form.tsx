@@ -28,7 +28,6 @@ interface ServiceFormProps {
     category_id: string | null
     thumbnail_url: string | null
     delivery_days: number | null
-    revision_count: number | null
     is_published: boolean
     external_url: string | null
   } | null
@@ -50,7 +49,6 @@ export function ServiceForm({ service, categories }: ServiceFormProps) {
     category_id: service?.category_id || "",
     thumbnail_url: service?.thumbnail_url || "",
     delivery_days: service?.delivery_days || null,
-    revision_count: service?.revision_count || null,
     is_published: service?.is_published || false,
     external_url: service?.external_url || "",
   })
@@ -216,32 +214,17 @@ export function ServiceForm({ service, categories }: ServiceFormProps) {
                 </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="delivery_days">작업 기간 (일)</Label>
-                  <Input
-                    id="delivery_days"
-                    type="number"
-                    value={formData.delivery_days || ""}
-                    onChange={(e) => setFormData((prev) => ({
-                      ...prev,
-                      delivery_days: e.target.value ? Number(e.target.value) : null,
-                    }))}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="revision_count">수정 횟수</Label>
-                  <Input
-                    id="revision_count"
-                    type="number"
-                    value={formData.revision_count || ""}
-                    onChange={(e) => setFormData((prev) => ({
-                      ...prev,
-                      revision_count: e.target.value ? Number(e.target.value) : null,
-                    }))}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="delivery_days">작업 기간 (일)</Label>
+                <Input
+                  id="delivery_days"
+                  type="number"
+                  value={formData.delivery_days || ""}
+                  onChange={(e) => setFormData((prev) => ({
+                    ...prev,
+                    delivery_days: e.target.value ? Number(e.target.value) : null,
+                  }))}
+                />
               </div>
             </CardContent>
           </Card>
