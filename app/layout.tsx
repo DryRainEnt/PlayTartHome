@@ -10,7 +10,7 @@ import { OrganizationJsonLd } from "@/components/json-ld"
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://playtart.com"
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://play-t.art"
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),

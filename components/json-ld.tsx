@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://playtart.com"
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://play-t.art"
 
 interface OrganizationJsonLdProps {
   name?: string

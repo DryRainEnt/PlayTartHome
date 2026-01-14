@@ -18,7 +18,7 @@ import { PageViewTracker } from "@/components/page-view-tracker"
 import { ProductJsonLd } from "@/components/json-ld"
 import type { Metadata } from "next"
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://playtart.com"
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://play-t.art"
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
