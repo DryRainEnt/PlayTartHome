@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useRef, useState, useCallback } from "react"
-import ReactPlayer from "react-player"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import {
@@ -12,6 +11,9 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForward } from "lucide-react"
 
+// react-player를 lazy import (SSR 방지)
+import type ReactPlayerType from "react-player"
+
 interface VideoPlayerProps {
   src: string
   onTimeUpdate?: (currentTime: number) => void
@@ -21,7 +23,8 @@ interface VideoPlayerProps {
 
 export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: VideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const playerRef = useRef<ReactPlayer>(null)
+  const playerRef = useRef<ReactPlayerType>(null)
+  const [ReactPlayer, setReactPlayer] = useState<typeof ReactPlayerType | null>(null)
   const [isReady, setIsReady] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -33,6 +36,13 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
   const [showControls, setShowControls] = useState(true)
   const [seeking, setSeeking] = useState(false)
   const hideControlsTimeout = useRef<NodeJS.Timeout | null>(null)
+
+  // 클라이언트에서만 react-player 로드
+  useEffect(() => {
+    import("react-player").then((mod) => {
+      setReactPlayer(() => mod.default)
+    })
+  }, [])
 
   // Auto-hide controls
   const resetControlsTimeout = useCallback(() => {
@@ -227,39 +237,43 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
       onMouseMove={resetControlsTimeout}
       onMouseLeave={() => isPlaying && setShowControls(false)}
     >
-      <ReactPlayer
-        ref={playerRef}
-        url={src}
-        width="100%"
-        height="100%"
-        playing={isPlaying}
-        volume={volume}
-        muted={isMuted}
-        playbackRate={playbackRate}
-        onReady={handleReady}
-        onDuration={handleDuration}
-        onProgress={handleProgress}
-        onEnded={handleEnded}
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
-        config={{
-          youtube: {
-            playerVars: {
-              modestbranding: 1,
-              rel: 0,
-              showinfo: 0,
-              disablekb: 1,
+      {ReactPlayer && (
+        <ReactPlayer
+          ref={playerRef}
+          url={src}
+          width="100%"
+          height="100%"
+          playing={isPlaying}
+          volume={volume}
+          muted={isMuted}
+          playbackRate={playbackRate}
+          onReady={handleReady}
+          onDuration={handleDuration}
+          onProgress={handleProgress}
+          onEnded={handleEnded}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          onError={(e) => console.error("ReactPlayer error:", e)}
+          config={{
+            youtube: {
+              playerVars: {
+                modestbranding: 1,
+                rel: 0,
+                showinfo: 0,
+                disablekb: 1,
+                origin: typeof window !== "undefined" ? window.location.origin : "",
+              },
             },
-          },
-          vimeo: {
-            playerOptions: {
-              byline: false,
-              portrait: false,
-              title: false,
+            vimeo: {
+              playerOptions: {
+                byline: false,
+                portrait: false,
+                title: false,
+              },
             },
-          },
-        }}
-      />
+          }}
+        />
+      )}
 
       {/* Click overlay to toggle play */}
       <div
@@ -279,7 +293,7 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
       )}
 
       {/* Loading overlay */}
-      {!isReady && (
+      {(!ReactPlayer || !isReady) && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="h-12 w-12 border-4 border-white/30 border-t-white rounded-full animate-spin" />
         </div>
