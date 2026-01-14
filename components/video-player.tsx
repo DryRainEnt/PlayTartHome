@@ -11,9 +11,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForward } from "lucide-react"
 
-// react-player를 lazy import (SSR 방지)
-import type ReactPlayerType from "react-player"
-
 interface VideoPlayerProps {
   src: string
   onTimeUpdate?: (currentTime: number) => void
@@ -21,11 +18,28 @@ interface VideoPlayerProps {
   initialTime?: number
 }
 
+// YouTube URL에서 video ID 추출
+function getYouTubeVideoId(url: string): string | null {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+    /youtube\.com\/watch\?.*v=([^&\n?#]+)/,
+  ]
+
+  for (const pattern of patterns) {
+    const match = url.match(pattern)
+    if (match) return match[1]
+  }
+  return null
+}
+
+// YouTube URL인지 확인
+function isYouTubeUrl(url: string): boolean {
+  return url.includes("youtube.com") || url.includes("youtu.be")
+}
+
 export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: VideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const playerRef = useRef<ReactPlayerType>(null)
-  const [ReactPlayer, setReactPlayer] = useState<typeof ReactPlayerType | null>(null)
-  const [isReady, setIsReady] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
@@ -34,20 +48,15 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [playbackRate, setPlaybackRate] = useState(1)
   const [showControls, setShowControls] = useState(true)
-  const [seeking, setSeeking] = useState(false)
   const hideControlsTimeout = useRef<NodeJS.Timeout | null>(null)
 
-  // 클라이언트에서만 react-player 로드
-  useEffect(() => {
-    console.log("[VideoPlayer] Loading react-player, src:", src)
-    import("react-player").then((mod) => {
-      console.log("[VideoPlayer] react-player loaded")
-      setReactPlayer(() => mod.default)
-    })
-  }, [src])
+  const isYouTube = isYouTubeUrl(src)
+  const youtubeVideoId = isYouTube ? getYouTubeVideoId(src) : null
 
-  // Auto-hide controls
+  // Auto-hide controls (HTML5 video only)
   const resetControlsTimeout = useCallback(() => {
+    if (isYouTube) return // YouTube는 자체 컨트롤 사용
+
     setShowControls(true)
     if (hideControlsTimeout.current) {
       clearTimeout(hideControlsTimeout.current)
@@ -57,78 +66,94 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
         setShowControls(false)
       }, 3000)
     }
-  }, [isPlaying])
+  }, [isPlaying, isYouTube])
 
-  // Seek to initial time when ready
+  // HTML5 Video 이벤트 핸들러
   useEffect(() => {
-    if (isReady && initialTime > 0 && playerRef.current) {
-      playerRef.current.seekTo(initialTime, "seconds")
+    if (isYouTube) return
+
+    const video = videoRef.current
+    if (!video) return
+
+    const handleLoadedMetadata = () => {
+      setDuration(video.duration)
+      if (initialTime > 0) {
+        video.currentTime = initialTime
+      }
     }
-  }, [isReady, initialTime])
 
-  // Keyboard shortcuts
+    const handleTimeUpdate = () => {
+      setCurrentTime(video.currentTime)
+      onTimeUpdate?.(video.currentTime)
+    }
+
+    const handleEnded = () => {
+      setIsPlaying(false)
+      onEnded?.()
+    }
+
+    video.addEventListener("loadedmetadata", handleLoadedMetadata)
+    video.addEventListener("timeupdate", handleTimeUpdate)
+    video.addEventListener("ended", handleEnded)
+
+    return () => {
+      video.removeEventListener("loadedmetadata", handleLoadedMetadata)
+      video.removeEventListener("timeupdate", handleTimeUpdate)
+      video.removeEventListener("ended", handleEnded)
+    }
+  }, [initialTime, onTimeUpdate, onEnded, isYouTube])
+
+  // Keyboard shortcuts (HTML5 video only)
   useEffect(() => {
+    if (isYouTube) return
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+
+      const video = videoRef.current
+      if (!video) return
 
       switch (e.key.toLowerCase()) {
         case " ":
         case "k":
           e.preventDefault()
-          setIsPlaying((prev) => !prev)
+          togglePlay()
           break
         case "arrowleft":
         case "j":
           e.preventDefault()
-          if (playerRef.current) {
-            const newTime = Math.max(0, currentTime - 10)
-            playerRef.current.seekTo(newTime, "seconds")
-            setCurrentTime(newTime)
-          }
+          video.currentTime = Math.max(0, video.currentTime - 10)
           break
         case "arrowright":
         case "l":
           e.preventDefault()
-          if (playerRef.current) {
-            const newTime = Math.min(duration, currentTime + 10)
-            playerRef.current.seekTo(newTime, "seconds")
-            setCurrentTime(newTime)
-          }
+          video.currentTime = Math.min(video.duration, video.currentTime + 10)
           break
         case "arrowup":
           e.preventDefault()
-          setVolume((prev) => Math.min(1, prev + 0.1))
+          setVolume((prev) => {
+            const newVol = Math.min(1, prev + 0.1)
+            if (video) video.volume = newVol
+            return newVol
+          })
           setIsMuted(false)
+          if (video) video.muted = false
           break
         case "arrowdown":
           e.preventDefault()
-          setVolume((prev) => Math.max(0, prev - 0.1))
+          setVolume((prev) => {
+            const newVol = Math.max(0, prev - 0.1)
+            if (video) video.volume = newVol
+            return newVol
+          })
           break
         case "m":
           e.preventDefault()
-          setIsMuted((prev) => !prev)
+          toggleMute()
           break
         case "f":
           e.preventDefault()
           toggleFullscreen()
-          break
-        case "0":
-        case "1":
-        case "2":
-        case "3":
-        case "4":
-        case "5":
-        case "6":
-        case "7":
-        case "8":
-        case "9":
-          e.preventDefault()
-          if (playerRef.current && duration > 0) {
-            const percent = parseInt(e.key) / 10
-            const newTime = duration * percent
-            playerRef.current.seekTo(newTime, "seconds")
-            setCurrentTime(newTime)
-          }
           break
       }
       resetControlsTimeout()
@@ -136,7 +161,7 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
 
     document.addEventListener("keydown", handleKeyDown)
     return () => document.removeEventListener("keydown", handleKeyDown)
-  }, [currentTime, duration, resetControlsTimeout])
+  }, [resetControlsTimeout, isYouTube])
 
   // Fullscreen change detection
   useEffect(() => {
@@ -147,55 +172,47 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange)
   }, [])
 
-  const handleReady = () => {
-    console.log("[VideoPlayer] Player ready")
-    setIsReady(true)
-  }
-
-  const handleDuration = (dur: number) => {
-    setDuration(dur)
-  }
-
-  const handleProgress = (state: { played: number; playedSeconds: number }) => {
-    if (!seeking) {
-      setCurrentTime(state.playedSeconds)
-      onTimeUpdate?.(state.playedSeconds)
-    }
-  }
-
-  const handleEnded = () => {
-    setIsPlaying(false)
-    onEnded?.()
-  }
-
   const togglePlay = () => {
-    setIsPlaying(!isPlaying)
+    if (isYouTube) return
+
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause()
+      } else {
+        videoRef.current.play()
+      }
+      setIsPlaying(!isPlaying)
+    }
     resetControlsTimeout()
   }
 
-  const handleSeekMouseDown = () => {
-    setSeeking(true)
-  }
-
   const handleSeek = (value: number[]) => {
-    setCurrentTime(value[0])
-  }
+    if (isYouTube) return
 
-  const handleSeekMouseUp = (value: number[]) => {
-    setSeeking(false)
-    if (playerRef.current) {
-      playerRef.current.seekTo(value[0], "seconds")
+    if (videoRef.current) {
+      videoRef.current.currentTime = value[0]
+      setCurrentTime(value[0])
     }
     resetControlsTimeout()
   }
 
   const handleVolumeChange = (value: number[]) => {
-    setVolume(value[0])
-    setIsMuted(value[0] === 0)
+    if (isYouTube) return
+
+    if (videoRef.current) {
+      videoRef.current.volume = value[0]
+      setVolume(value[0])
+      setIsMuted(value[0] === 0)
+    }
   }
 
   const toggleMute = () => {
-    setIsMuted(!isMuted)
+    if (isYouTube) return
+
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted
+      setIsMuted(!isMuted)
+    }
   }
 
   const toggleFullscreen = async () => {
@@ -212,10 +229,10 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
   }
 
   const skip = (seconds: number) => {
-    if (playerRef.current) {
-      const newTime = Math.max(0, Math.min(duration, currentTime + seconds))
-      playerRef.current.seekTo(newTime, "seconds")
-      setCurrentTime(newTime)
+    if (isYouTube) return
+
+    if (videoRef.current) {
+      videoRef.current.currentTime = Math.max(0, Math.min(duration, videoRef.current.currentTime + seconds))
     }
     resetControlsTimeout()
   }
@@ -233,6 +250,27 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
 
   const playbackRates = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
 
+  // YouTube embed
+  if (isYouTube && youtubeVideoId) {
+    const startTime = initialTime > 0 ? `&start=${Math.floor(initialTime)}` : ""
+
+    return (
+      <div
+        ref={containerRef}
+        className="relative w-full h-full bg-black"
+      >
+        <iframe
+          src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=0&rel=0&modestbranding=1${startTime}`}
+          className="absolute inset-0 w-full h-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          title="YouTube video player"
+        />
+      </div>
+    )
+  }
+
+  // HTML5 Video Player
   return (
     <div
       ref={containerRef}
@@ -240,79 +278,32 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
       onMouseMove={resetControlsTimeout}
       onMouseLeave={() => isPlaying && setShowControls(false)}
     >
-      {ReactPlayer && (
-        <div className="absolute inset-0 z-0">
-        <ReactPlayer
-          ref={playerRef}
-          url={src}
-          width="100%"
-          height="100%"
-          playing={isPlaying}
-          volume={volume}
-          muted={isMuted}
-          playbackRate={playbackRate}
-          onReady={handleReady}
-          onDuration={handleDuration}
-          onProgress={handleProgress}
-          onEnded={handleEnded}
-          onPlay={() => setIsPlaying(true)}
-          onPause={() => setIsPlaying(false)}
-          onError={(e, data) => console.error("[VideoPlayer] Error:", e, data)}
-          onBuffer={() => console.log("[VideoPlayer] Buffering...")}
-          onBufferEnd={() => console.log("[VideoPlayer] Buffer end")}
-          config={{
-            youtube: {
-              playerVars: {
-                modestbranding: 1,
-                rel: 0,
-                showinfo: 0,
-                disablekb: 1,
-                origin: typeof window !== "undefined" ? window.location.origin : "",
-              },
-            },
-            vimeo: {
-              playerOptions: {
-                byline: false,
-                portrait: false,
-                title: false,
-              },
-            },
-          }}
-        />
-        </div>
-      )}
+      <video
+        ref={videoRef}
+        src={src}
+        className="w-full h-full"
+        onClick={togglePlay}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onContextMenu={(e) => e.preventDefault()}
+      />
 
-      {/* Click overlay - YouTube iframe 위에 표시하지 않음 (pointer-events로 제어) */}
-      {isReady && (
+      {/* Play/Pause overlay */}
+      {!isPlaying && (
         <div
-          className="absolute inset-0 z-10 cursor-pointer"
-          style={{ pointerEvents: isPlaying ? "none" : "auto" }}
+          className="absolute inset-0 flex items-center justify-center cursor-pointer"
           onClick={togglePlay}
-        />
-      )}
-
-      {/* Play/Pause center overlay */}
-      {!isPlaying && isReady && (
-        <div
-          className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none"
         >
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-transform hover:scale-110">
             <Play className="h-10 w-10 text-white ml-1" fill="white" />
           </div>
         </div>
       )}
 
-      {/* Loading overlay - pointer-events none으로 iframe 초기화 방해 안함 */}
-      {(!ReactPlayer || !isReady) && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-          <div className="h-12 w-12 border-4 border-white/30 border-t-white rounded-full animate-spin" />
-        </div>
-      )}
-
       {/* Controls */}
       <div
-        className={`absolute bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity duration-300 ${
-          showControls || !isPlaying ? "opacity-100" : "opacity-0 pointer-events-none"
+        className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity duration-300 ${
+          showControls || !isPlaying ? "opacity-100" : "opacity-0"
         }`}
       >
         {/* Progress bar */}
@@ -321,8 +312,6 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
           max={duration || 100}
           step={0.1}
           onValueChange={handleSeek}
-          onPointerDown={handleSeekMouseDown}
-          onPointerUp={() => handleSeekMouseUp([currentTime])}
           className="mb-3"
         />
 
@@ -372,7 +361,10 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
               {playbackRates.map((rate) => (
                 <DropdownMenuItem
                   key={rate}
-                  onClick={() => setPlaybackRate(rate)}
+                  onClick={() => {
+                    setPlaybackRate(rate)
+                    if (videoRef.current) videoRef.current.playbackRate = rate
+                  }}
                   className={playbackRate === rate ? "bg-muted" : ""}
                 >
                   {rate}x {rate === 1 && "(기본)"}
