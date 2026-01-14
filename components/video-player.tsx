@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useCallback } from "react"
+import ReactPlayer from "react-player"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import {
@@ -9,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForward, Settings } from "lucide-react"
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForward } from "lucide-react"
 
 interface VideoPlayerProps {
   src: string
@@ -20,7 +21,8 @@ interface VideoPlayerProps {
 
 export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: VideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const videoRef = useRef<HTMLVideoElement>(null)
+  const playerRef = useRef<ReactPlayer>(null)
+  const [isReady, setIsReady] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
@@ -29,6 +31,7 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [playbackRate, setPlaybackRate] = useState(1)
   const [showControls, setShowControls] = useState(true)
+  const [seeking, setSeeking] = useState(false)
   const hideControlsTimeout = useRef<NodeJS.Timeout | null>(null)
 
   // Auto-hide controls
@@ -44,84 +47,54 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
     }
   }, [isPlaying])
 
+  // Seek to initial time when ready
   useEffect(() => {
-    const video = videoRef.current
-    if (!video) return
-
-    const handleLoadedMetadata = () => {
-      setDuration(video.duration)
-      if (initialTime > 0) {
-        video.currentTime = initialTime
-      }
+    if (isReady && initialTime > 0 && playerRef.current) {
+      playerRef.current.seekTo(initialTime, "seconds")
     }
-
-    const handleTimeUpdate = () => {
-      setCurrentTime(video.currentTime)
-      onTimeUpdate?.(video.currentTime)
-    }
-
-    const handleEnded = () => {
-      setIsPlaying(false)
-      onEnded?.()
-    }
-
-    video.addEventListener("loadedmetadata", handleLoadedMetadata)
-    video.addEventListener("timeupdate", handleTimeUpdate)
-    video.addEventListener("ended", handleEnded)
-
-    return () => {
-      video.removeEventListener("loadedmetadata", handleLoadedMetadata)
-      video.removeEventListener("timeupdate", handleTimeUpdate)
-      video.removeEventListener("ended", handleEnded)
-    }
-  }, [initialTime, onTimeUpdate, onEnded])
+  }, [isReady, initialTime])
 
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if typing in an input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-
-      const video = videoRef.current
-      if (!video) return
 
       switch (e.key.toLowerCase()) {
         case " ":
         case "k":
           e.preventDefault()
-          togglePlay()
+          setIsPlaying((prev) => !prev)
           break
         case "arrowleft":
         case "j":
           e.preventDefault()
-          video.currentTime = Math.max(0, video.currentTime - 10)
+          if (playerRef.current) {
+            const newTime = Math.max(0, currentTime - 10)
+            playerRef.current.seekTo(newTime, "seconds")
+            setCurrentTime(newTime)
+          }
           break
         case "arrowright":
         case "l":
           e.preventDefault()
-          video.currentTime = Math.min(video.duration, video.currentTime + 10)
+          if (playerRef.current) {
+            const newTime = Math.min(duration, currentTime + 10)
+            playerRef.current.seekTo(newTime, "seconds")
+            setCurrentTime(newTime)
+          }
           break
         case "arrowup":
           e.preventDefault()
-          setVolume((prev) => {
-            const newVol = Math.min(1, prev + 0.1)
-            if (video) video.volume = newVol
-            return newVol
-          })
+          setVolume((prev) => Math.min(1, prev + 0.1))
           setIsMuted(false)
-          if (video) video.muted = false
           break
         case "arrowdown":
           e.preventDefault()
-          setVolume((prev) => {
-            const newVol = Math.max(0, prev - 0.1)
-            if (video) video.volume = newVol
-            return newVol
-          })
+          setVolume((prev) => Math.max(0, prev - 0.1))
           break
         case "m":
           e.preventDefault()
-          toggleMute()
+          setIsMuted((prev) => !prev)
           break
         case "f":
           e.preventDefault()
@@ -138,8 +111,12 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
         case "8":
         case "9":
           e.preventDefault()
-          const percent = parseInt(e.key) / 10
-          video.currentTime = video.duration * percent
+          if (playerRef.current && duration > 0) {
+            const percent = parseInt(e.key) / 10
+            const newTime = duration * percent
+            playerRef.current.seekTo(newTime, "seconds")
+            setCurrentTime(newTime)
+          }
           break
       }
       resetControlsTimeout()
@@ -147,7 +124,7 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
 
     document.addEventListener("keydown", handleKeyDown)
     return () => document.removeEventListener("keydown", handleKeyDown)
-  }, [resetControlsTimeout])
+  }, [currentTime, duration, resetControlsTimeout])
 
   // Fullscreen change detection
   useEffect(() => {
@@ -158,39 +135,54 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange)
   }, [])
 
-  const togglePlay = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause()
-      } else {
-        videoRef.current.play()
-      }
-      setIsPlaying(!isPlaying)
+  const handleReady = () => {
+    setIsReady(true)
+  }
+
+  const handleDuration = (dur: number) => {
+    setDuration(dur)
+  }
+
+  const handleProgress = (state: { played: number; playedSeconds: number }) => {
+    if (!seeking) {
+      setCurrentTime(state.playedSeconds)
+      onTimeUpdate?.(state.playedSeconds)
     }
+  }
+
+  const handleEnded = () => {
+    setIsPlaying(false)
+    onEnded?.()
+  }
+
+  const togglePlay = () => {
+    setIsPlaying(!isPlaying)
     resetControlsTimeout()
   }
 
+  const handleSeekMouseDown = () => {
+    setSeeking(true)
+  }
+
   const handleSeek = (value: number[]) => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = value[0]
-      setCurrentTime(value[0])
+    setCurrentTime(value[0])
+  }
+
+  const handleSeekMouseUp = (value: number[]) => {
+    setSeeking(false)
+    if (playerRef.current) {
+      playerRef.current.seekTo(value[0], "seconds")
     }
     resetControlsTimeout()
   }
 
   const handleVolumeChange = (value: number[]) => {
-    if (videoRef.current) {
-      videoRef.current.volume = value[0]
-      setVolume(value[0])
-      setIsMuted(value[0] === 0)
-    }
+    setVolume(value[0])
+    setIsMuted(value[0] === 0)
   }
 
   const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted
-      setIsMuted(!isMuted)
-    }
+    setIsMuted(!isMuted)
   }
 
   const toggleFullscreen = async () => {
@@ -206,21 +198,17 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
     }
   }
 
-  const handlePlaybackRateChange = (rate: number) => {
-    if (videoRef.current) {
-      videoRef.current.playbackRate = rate
-      setPlaybackRate(rate)
-    }
-  }
-
   const skip = (seconds: number) => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = Math.max(0, Math.min(duration, videoRef.current.currentTime + seconds))
+    if (playerRef.current) {
+      const newTime = Math.max(0, Math.min(duration, currentTime + seconds))
+      playerRef.current.seekTo(newTime, "seconds")
+      setCurrentTime(newTime)
     }
     resetControlsTimeout()
   }
 
   const formatTime = (time: number) => {
+    if (!time || !isFinite(time)) return "0:00"
     const hours = Math.floor(time / 3600)
     const minutes = Math.floor((time % 3600) / 60)
     const seconds = Math.floor(time % 60)
@@ -235,36 +223,72 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
   return (
     <div
       ref={containerRef}
-      className="group relative w-full overflow-hidden bg-black"
+      className="group relative w-full h-full overflow-hidden bg-black"
       onMouseMove={resetControlsTimeout}
       onMouseLeave={() => isPlaying && setShowControls(false)}
     >
-      <video
-        ref={videoRef}
-        src={src}
-        className="w-full h-full"
-        onClick={togglePlay}
+      <ReactPlayer
+        ref={playerRef}
+        url={src}
+        width="100%"
+        height="100%"
+        playing={isPlaying}
+        volume={volume}
+        muted={isMuted}
+        playbackRate={playbackRate}
+        onReady={handleReady}
+        onDuration={handleDuration}
+        onProgress={handleProgress}
+        onEnded={handleEnded}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
-        onContextMenu={(e) => e.preventDefault()}
+        config={{
+          youtube: {
+            playerVars: {
+              modestbranding: 1,
+              rel: 0,
+              showinfo: 0,
+              disablekb: 1,
+            },
+          },
+          vimeo: {
+            playerOptions: {
+              byline: false,
+              portrait: false,
+              title: false,
+            },
+          },
+        }}
       />
 
-      {/* Play/Pause overlay */}
-      {!isPlaying && (
+      {/* Click overlay to toggle play */}
+      <div
+        className="absolute inset-0 cursor-pointer"
+        onClick={togglePlay}
+      />
+
+      {/* Play/Pause center overlay */}
+      {!isPlaying && isReady && (
         <div
-          className="absolute inset-0 flex items-center justify-center cursor-pointer"
-          onClick={togglePlay}
+          className="absolute inset-0 flex items-center justify-center pointer-events-none"
         >
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-transform hover:scale-110">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
             <Play className="h-10 w-10 text-white ml-1" fill="white" />
           </div>
+        </div>
+      )}
+
+      {/* Loading overlay */}
+      {!isReady && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="h-12 w-12 border-4 border-white/30 border-t-white rounded-full animate-spin" />
         </div>
       )}
 
       {/* Controls */}
       <div
         className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity duration-300 ${
-          showControls || !isPlaying ? "opacity-100" : "opacity-0"
+          showControls || !isPlaying ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
       >
         {/* Progress bar */}
@@ -273,6 +297,8 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
           max={duration || 100}
           step={0.1}
           onValueChange={handleSeek}
+          onPointerDown={handleSeekMouseDown}
+          onPointerUp={() => handleSeekMouseUp([currentTime])}
           className="mb-3"
         />
 
@@ -322,7 +348,7 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
               {playbackRates.map((rate) => (
                 <DropdownMenuItem
                   key={rate}
-                  onClick={() => handlePlaybackRateChange(rate)}
+                  onClick={() => setPlaybackRate(rate)}
                   className={playbackRate === rate ? "bg-muted" : ""}
                 >
                   {rate}x {rate === 1 && "(기본)"}
@@ -338,7 +364,7 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
         </div>
       </div>
 
-      {/* Keyboard shortcuts hint (shows briefly on first load) */}
+      {/* Keyboard shortcuts hint */}
       <div className="absolute top-4 right-4 text-xs text-white/60 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
         Space: 재생/일시정지 | ←→: 10초 이동 | ↑↓: 볼륨 | F: 전체화면
       </div>
