@@ -15,6 +15,51 @@ import {
   CheckCircle,
 } from "lucide-react"
 import { PageViewTracker } from "@/components/page-view-tracker"
+import { ProductJsonLd } from "@/components/json-ld"
+import type { Metadata } from "next"
+
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://playtart.com"
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const supabase = await createClient()
+
+  const { data: product } = await supabase
+    .from("products")
+    .select("title, description, thumbnail_url, price, category:product_categories(name)")
+    .eq("slug", slug)
+    .eq("is_published", true)
+    .single()
+
+  if (!product) {
+    return {
+      title: "제품을 찾을 수 없습니다",
+    }
+  }
+
+  const title = product.title
+  const categoryName = (product.category as any)?.name || "제품"
+  const priceText = product.price === 0 ? "무료" : `₩${product.price.toLocaleString()}`
+  const description = product.description || `${categoryName} - ${title} (${priceText})`
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `${BASE_URL}/product/${slug}`,
+      type: "website",
+      images: product.thumbnail_url ? [{ url: product.thumbnail_url, alt: title }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: product.thumbnail_url ? [product.thumbnail_url] : undefined,
+    },
+  }
+}
 
 export default async function ProductDetailPage({
   params,
@@ -70,6 +115,13 @@ export default async function ProductDetailPage({
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <ProductJsonLd
+        name={product.title}
+        description={product.description || ""}
+        image={product.thumbnail_url}
+        url={`/product/${slug}`}
+        price={product.price}
+      />
       <PageViewTracker resourceType="product" resourceId={product.id} resourceSlug={slug} />
       <Button variant="ghost" asChild className="mb-6">
         <Link href="/product">

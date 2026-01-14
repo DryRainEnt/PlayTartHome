@@ -5,6 +5,56 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { PageViewTracker } from "@/components/page-view-tracker"
+import { ServiceJsonLd } from "@/components/json-ld"
+import type { Metadata } from "next"
+
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://playtart.com"
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const supabase = await createClient()
+
+  const { data: service } = await supabase
+    .from("services")
+    .select("title, description, thumbnail_url, price_min, price_max, category:service_categories(name)")
+    .eq("slug", slug)
+    .eq("is_published", true)
+    .single()
+
+  if (!service) {
+    return {
+      title: "서비스를 찾을 수 없습니다",
+    }
+  }
+
+  const title = service.title
+  const categoryName = (service.category as any)?.name || "외주 서비스"
+  let priceText = "가격 문의"
+  if (service.price_min && service.price_max) {
+    priceText = `₩${service.price_min.toLocaleString()} - ₩${service.price_max.toLocaleString()}`
+  } else if (service.price_min) {
+    priceText = `₩${service.price_min.toLocaleString()}~`
+  }
+  const description = service.description || `${categoryName} - ${title} (${priceText})`
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `${BASE_URL}/outsourcing/${slug}`,
+      type: "website",
+      images: service.thumbnail_url ? [{ url: service.thumbnail_url, alt: title }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: service.thumbnail_url ? [service.thumbnail_url] : undefined,
+    },
+  }
+}
 
 export default async function ServiceDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -31,8 +81,22 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
     data: { user },
   } = await supabase.auth.getUser()
 
+  const priceRange = service.price_min && service.price_max
+    ? `₩${service.price_min.toLocaleString()} - ₩${service.price_max.toLocaleString()}`
+    : service.price_min
+    ? `₩${service.price_min.toLocaleString()}~`
+    : undefined
+
   return (
     <div className="container mx-auto px-4 py-8">
+      <ServiceJsonLd
+        name={service.title}
+        description={service.description || ""}
+        provider={service.provider?.display_name || service.provider?.full_name || "Playtart"}
+        url={`/outsourcing/${slug}`}
+        image={service.thumbnail_url}
+        priceRange={priceRange}
+      />
       <PageViewTracker resourceType="service" resourceId={service.id} resourceSlug={slug} />
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">

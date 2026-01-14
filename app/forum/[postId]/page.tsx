@@ -9,6 +9,49 @@ import { ReplyList } from "@/components/reply-list"
 import { ReplyForm } from "@/components/reply-form"
 import { PageViewTracker } from "@/components/page-view-tracker"
 import { MarkdownContent } from "@/components/markdown-content"
+import { ArticleJsonLd } from "@/components/json-ld"
+import type { Metadata } from "next"
+
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://playtart.com"
+
+export async function generateMetadata({ params }: { params: Promise<{ postId: string }> }): Promise<Metadata> {
+  const { postId } = await params
+  const supabase = await createClient()
+
+  const { data: post } = await supabase
+    .from("forum_posts")
+    .select("title, content, author:profiles!forum_posts_author_id_fkey(display_name, full_name), category:forum_categories(name)")
+    .eq("id", postId)
+    .single()
+
+  if (!post) {
+    return {
+      title: "게시글을 찾을 수 없습니다",
+    }
+  }
+
+  const title = post.title
+  const authorName = (post.author as any)?.display_name || (post.author as any)?.full_name || "익명"
+  const categoryName = (post.category as any)?.name || "게시판"
+  const contentPreview = post.content ? post.content.substring(0, 150).replace(/\n/g, " ") + "..." : ""
+  const description = `${authorName}님의 글 - ${contentPreview}`
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `${BASE_URL}/forum/${postId}`,
+      type: "article",
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
+  }
+}
 
 export default async function PostDetailPage({ params }: { params: Promise<{ postId: string }> }) {
   const { postId } = await params
@@ -53,6 +96,14 @@ export default async function PostDetailPage({ params }: { params: Promise<{ pos
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <ArticleJsonLd
+        headline={post.title}
+        description={post.content?.substring(0, 150) || ""}
+        author={post.author?.display_name || post.author?.full_name || "익명"}
+        datePublished={post.created_at}
+        dateModified={post.updated_at}
+        url={`/forum/${postId}`}
+      />
       <PageViewTracker resourceType="forum_post" resourceId={postId} />
       <div className="mx-auto max-w-4xl">
         <Button variant="ghost" asChild className="mb-4">

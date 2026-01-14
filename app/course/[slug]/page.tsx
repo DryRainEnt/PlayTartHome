@@ -5,6 +5,49 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { PageViewTracker } from "@/components/page-view-tracker"
+import { CourseJsonLd } from "@/components/json-ld"
+import type { Metadata } from "next"
+
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://playtart.com"
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const supabase = await createClient()
+
+  const { data: course } = await supabase
+    .from("courses")
+    .select("title, description, thumbnail_url, instructor_name, price")
+    .eq("slug", slug)
+    .eq("is_published", true)
+    .single()
+
+  if (!course) {
+    return {
+      title: "강의를 찾을 수 없습니다",
+    }
+  }
+
+  const title = course.title
+  const description = course.description || `${course.instructor_name} 강사의 ${course.title} 강의`
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `${BASE_URL}/course/${slug}`,
+      type: "website",
+      images: course.thumbnail_url ? [{ url: course.thumbnail_url, alt: title }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: course.thumbnail_url ? [course.thumbnail_url] : undefined,
+    },
+  }
+}
 
 export default async function CourseDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -50,6 +93,14 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <CourseJsonLd
+        name={course.title}
+        description={course.description || ""}
+        provider={course.instructor_name || "Playtart"}
+        url={`/course/${slug}`}
+        image={course.thumbnail_url}
+        price={course.price}
+      />
       <PageViewTracker resourceType="course" resourceId={course.id} resourceSlug={slug} />
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Main Content */}
