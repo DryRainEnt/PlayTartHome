@@ -20,7 +20,8 @@
       "Bash(git commit:*)",
       "WebFetch(domain:www.youtube.com)",
       "WebSearch",
-      "mcp__tosspayments__get-v2-documents"
+      "mcp__tosspayments__get-v2-documents",
+      "Bash(grep:*)"
     ]
   }
 }
