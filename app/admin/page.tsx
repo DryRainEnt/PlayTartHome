@@ -10,22 +10,42 @@ export default async function AdminDashboard() {
     { count: coursesCount },
     { count: servicesCount },
     { count: usersCount },
-    { count: ordersCount },
+    { count: coursePurchasesCount },
+    { count: productPurchasesCount },
     { count: postsCount },
   ] = await Promise.all([
     supabase.from("courses").select("*", { count: "exact", head: true }),
     supabase.from("services").select("*", { count: "exact", head: true }),
     supabase.from("profiles").select("*", { count: "exact", head: true }),
-    supabase.from("orders").select("*", { count: "exact", head: true }),
-    supabase.from("posts").select("*", { count: "exact", head: true }),
+    supabase.from("course_purchases").select("*", { count: "exact", head: true }).eq("status", "completed"),
+    supabase.from("product_purchases").select("*", { count: "exact", head: true }).eq("status", "completed"),
+    supabase.from("forum_posts").select("*", { count: "exact", head: true }),
   ])
 
-  // Recent orders
-  const { data: recentOrders } = await supabase
-    .from("orders")
-    .select("*, user:profiles!orders_user_id_fkey(full_name, email)")
+  const ordersCount = (coursePurchasesCount || 0) + (productPurchasesCount || 0)
+
+  // Recent orders (강의 + 제품 구매 합쳐서)
+  const { data: recentCoursePurchases } = await supabase
+    .from("course_purchases")
+    .select("*, user:profiles!course_purchases_user_id_fkey(full_name, email), course:courses(title)")
+    .eq("status", "completed")
     .order("created_at", { ascending: false })
     .limit(5)
+
+  const { data: recentProductPurchases } = await supabase
+    .from("product_purchases")
+    .select("*, user:profiles!product_purchases_user_id_fkey(full_name, email), product:products(title)")
+    .eq("status", "completed")
+    .order("created_at", { ascending: false })
+    .limit(5)
+
+  // 두 구매 목록 합치고 최신순 정렬
+  const recentOrders = [
+    ...(recentCoursePurchases || []).map(p => ({ ...p, type: "course", title: p.course?.title })),
+    ...(recentProductPurchases || []).map(p => ({ ...p, type: "product", title: p.product?.title })),
+  ]
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 5)
 
   const stats = [
     { label: "전체 강의", value: coursesCount || 0, icon: BookOpen, color: "text-blue-600" },
@@ -74,22 +94,17 @@ export default async function AdminDashboard() {
                   className="flex items-center justify-between border-b pb-4 last:border-0"
                 >
                   <div>
-                    <p className="font-medium">{order.user?.full_name || order.user?.email}</p>
+                    <p className="font-medium">{order.user?.full_name || order.user?.email || "알 수 없음"}</p>
                     <p className="text-sm text-muted-foreground">
+                      {order.title} ({order.type === "course" ? "강의" : "제품"})
+                    </p>
+                    <p className="text-xs text-muted-foreground">
                       {new Date(order.created_at).toLocaleDateString("ko-KR")}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium">₩{order.total_amount?.toLocaleString()}</p>
-                    <p className={`text-sm ${
-                      order.status === "completed" ? "text-green-600" :
-                      order.status === "pending" ? "text-yellow-600" :
-                      "text-gray-600"
-                    }`}>
-                      {order.status === "completed" ? "완료" :
-                       order.status === "pending" ? "대기" :
-                       order.status}
-                    </p>
+                    <p className="font-medium">₩{order.amount_paid?.toLocaleString()}</p>
+                    <p className="text-sm text-green-600">완료</p>
                   </div>
                 </div>
               ))}
