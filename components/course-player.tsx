@@ -20,6 +20,7 @@ import {
   PlayCircle,
   List,
   Home,
+  Clock,
 } from "lucide-react"
 
 interface CoursePlayerProps {
@@ -55,12 +56,13 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
     fetchProgress()
   }, [userId, course.id, supabase])
 
-  // Flatten all lessons for navigation
+  // Flatten all lessons for navigation (only published lessons)
   const allLessons = useMemo(() => {
     const lessons: any[] = []
     sections.forEach((section) => {
       section.lessons
         ?.sort((a: any, b: any) => a.order_index - b.order_index)
+        .filter((lesson: any) => lesson.is_published !== false) // 공개된 레슨만
         .forEach((lesson: any) => {
           lessons.push({ ...lesson, sectionTitle: section.title })
         })
@@ -72,9 +74,11 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
   const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null
   const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null
 
-  // Calculate progress
+  // Calculate progress (only published lessons count)
   const totalLessons = allLessons.length
-  const completedCount = completedLessons.size + (isCompleted && !completedLessons.has(currentLesson.id) ? 1 : 0)
+  const completedCount = Array.from(completedLessons).filter(id =>
+    allLessons.some(l => l.id === id)
+  ).length + (isCompleted && !completedLessons.has(currentLesson.id) ? 1 : 0)
   const progressPercent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0
 
   const handleTimeUpdate = async (currentTime: number) => {
@@ -150,6 +154,31 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
               .map((lesson: any) => {
                 const isActive = lesson.id === currentLesson.id
                 const isLessonCompleted = completedLessons.has(lesson.id) || (isActive && isCompleted)
+                const isComingSoon = lesson.is_published === false
+
+                // 공개 예정 레슨은 클릭 불가
+                if (isComingSoon) {
+                  return (
+                    <div
+                      key={lesson.id}
+                      className="w-full text-left rounded-lg p-3 bg-muted/30 opacity-60 cursor-not-allowed"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5 flex-shrink-0">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate text-muted-foreground">
+                            {lesson.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            추후 공개 예정
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
 
                 return (
                   <button

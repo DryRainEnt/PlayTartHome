@@ -1,12 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "./ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
-import { Checkbox } from "./ui/checkbox"
-import { Label } from "./ui/label"
 import { createClient } from "@/lib/supabase/client"
-import { loadTossPayments, ANONYMOUS } from "@tosspayments/tosspayments-sdk"
+import { loadTossPayments } from "@tosspayments/tosspayments-sdk"
 import { Construction, Loader2 } from "lucide-react"
 import Link from "next/link"
 
@@ -23,10 +21,10 @@ export function PurchaseForm({ course, user, profile }: PurchaseFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isInitializing, setIsInitializing] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [agreeTerms, setAgreeTerms] = useState(false)
-  const [agreeRefund, setAgreeRefund] = useState(false)
-  const [payment, setPayment] = useState<any>(null)
-  const supabase = createClient()
+  const [widgets, setWidgets] = useState<any>(null)
+  const [isAgreementReady, setIsAgreementReady] = useState(false)
+  const paymentMethodRef = useRef<HTMLDivElement>(null)
+  const agreementRef = useRef<HTMLDivElement>(null)
 
   // 주문번호 생성
   const generateOrderId = () => {
@@ -38,7 +36,7 @@ export function PurchaseForm({ course, user, profile }: PurchaseFormProps) {
 
   const [orderId] = useState(generateOrderId())
 
-  // 토스페이먼츠 SDK 초기화 (API 개별 연동 방식)
+  // 토스페이먼츠 결제위젯 초기화
   useEffect(() => {
     const initTossPayments = async () => {
       if (!TOSS_CLIENT_KEY || !TOSS_ENABLED) {
@@ -50,12 +48,18 @@ export function PurchaseForm({ course, user, profile }: PurchaseFormProps) {
         const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY)
         const customerKey = `customer_${user.id.replace(/-/g, "").substring(0, 20)}`
 
-        // API 개별 연동 방식: payment() 사용
-        const paymentInstance = tossPayments.payment({
+        // 결제위젯 인스턴스 생성
+        const widgetsInstance = tossPayments.widgets({
           customerKey,
         })
 
-        setPayment(paymentInstance)
+        // 결제 금액 설정
+        await widgetsInstance.setAmount({
+          currency: "KRW",
+          value: course.price,
+        })
+
+        setWidgets(widgetsInstance)
         setIsInitializing(false)
       } catch (err) {
         console.error("TossPayments init error:", err)
@@ -65,17 +69,39 @@ export function PurchaseForm({ course, user, profile }: PurchaseFormProps) {
     }
 
     initTossPayments()
-  }, [user.id])
+  }, [user.id, course.price])
 
-  const handlePurchase = async () => {
-    if (!payment) {
-      setError("결제 시스템이 준비되지 않았습니다")
-      return
+  // 위젯 렌더링
+  useEffect(() => {
+    if (!widgets || !paymentMethodRef.current || !agreementRef.current) return
+
+    const renderWidgets = async () => {
+      try {
+        // 결제수단 위젯 렌더링
+        await widgets.renderPaymentMethods({
+          selector: "#payment-method",
+          variantKey: "DEFAULT",
+        })
+
+        // 약관 동의 위젯 렌더링
+        await widgets.renderAgreement({
+          selector: "#agreement",
+          variantKey: "AGREEMENT",
+        })
+
+        setIsAgreementReady(true)
+      } catch (err) {
+        console.error("Widget render error:", err)
+        setError("결제 위젯 로딩에 실패했습니다")
+      }
     }
 
-    // 약관 동의 확인
-    if (!agreeTerms || !agreeRefund) {
-      setError("이용약관과 환불정책에 동의해주세요")
+    renderWidgets()
+  }, [widgets])
+
+  const handlePurchase = async () => {
+    if (!widgets) {
+      setError("결제 시스템이 준비되지 않았습니다")
       return
     }
 
@@ -83,34 +109,21 @@ export function PurchaseForm({ course, user, profile }: PurchaseFormProps) {
     setError(null)
 
     try {
-      // 토스페이먼츠 결제 요청 (사용자 클릭 직후 바로 호출해야 팝업 차단 안 됨)
-      // DB 저장은 success 페이지에서 처리
-      await payment.requestPayment({
-        method: "CARD",
-        amount: {
-          currency: "KRW",
-          value: course.price,
-        },
+      // 결제위젯으로 결제 요청
+      await widgets.requestPayment({
         orderId: orderId,
         orderName: course.title,
         successUrl: `${window.location.origin}/course/${course.slug}/purchase/success?courseId=${course.id}&userId=${user.id}&amount=${course.price}`,
         failUrl: `${window.location.origin}/course/${course.slug}/purchase?error=payment_failed`,
         customerEmail: user.email,
         customerName: profile?.full_name || profile?.display_name || "고객",
-        card: {
-          useEscrow: false,
-          flowMode: "DEFAULT",
-          useCardPoint: false,
-          useAppCardOnly: false,
-        },
       })
     } catch (err: any) {
-      // 사용자가 결제창을 닫은 경우
       if (err.code === "USER_CANCEL" || err.code === "PAY_PROCESS_CANCELED") {
         setError("결제가 취소되었습니다")
       } else {
         console.error("Payment error:", err)
-        setError(err instanceof Error ? err.message : "결제 요청에 실패했습니다")
+        setError(err.message || "결제 요청에 실패했습니다")
       }
     } finally {
       setIsLoading(false)
@@ -218,57 +231,26 @@ export function PurchaseForm({ course, user, profile }: PurchaseFormProps) {
         </CardContent>
       </Card>
 
-      {/* 결제 방법 안내 */}
+      {/* 결제수단 위젯 */}
       <Card>
         <CardHeader>
-          <CardTitle>결제 방법</CardTitle>
+          <CardTitle>결제 수단</CardTitle>
           <CardDescription>
-            결제하기 버튼을 누르면 토스페이먼츠 결제창이 열립니다
+            결제에 사용할 수단을 선택해주세요
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
-            <p>지원 결제수단: 신용/체크카드, 간편결제(토스페이, 카카오페이, 네이버페이 등)</p>
-          </div>
+          <div id="payment-method" ref={paymentMethodRef} />
         </CardContent>
       </Card>
 
-      {/* 서비스 약관 동의 */}
+      {/* 약관 동의 위젯 */}
       <Card>
         <CardHeader>
           <CardTitle>약관 동의</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-start space-x-3">
-            <Checkbox
-              id="agreeTerms"
-              checked={agreeTerms}
-              onCheckedChange={(checked) => setAgreeTerms(checked === true)}
-            />
-            <div className="grid gap-1.5 leading-none">
-              <Label htmlFor="agreeTerms" className="cursor-pointer font-medium">
-                이용약관 동의 (필수)
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                서비스 이용약관에 동의합니다
-              </p>
-            </div>
-          </div>
-          <div className="flex items-start space-x-3">
-            <Checkbox
-              id="agreeRefund"
-              checked={agreeRefund}
-              onCheckedChange={(checked) => setAgreeRefund(checked === true)}
-            />
-            <div className="grid gap-1.5 leading-none">
-              <Label htmlFor="agreeRefund" className="cursor-pointer font-medium">
-                환불정책 동의 (필수)
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                디지털 콘텐츠 특성상 수강 시작 후에는 환불이 제한됩니다
-              </p>
-            </div>
-          </div>
+        <CardContent>
+          <div id="agreement" ref={agreementRef} />
         </CardContent>
       </Card>
 
@@ -300,7 +282,7 @@ export function PurchaseForm({ course, user, profile }: PurchaseFormProps) {
       <div className="space-y-3">
         <Button
           onClick={handlePurchase}
-          disabled={isLoading || !payment || !agreeTerms || !agreeRefund}
+          disabled={isLoading || !widgets || !isAgreementReady}
           className="w-full"
           size="lg"
         >

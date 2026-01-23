@@ -151,24 +151,47 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
                   <div key={section.id} className="space-y-2">
                     <h3 className="font-semibold">{section.title}</h3>
                     <div className="space-y-1">
-                      {section.lessons?.map((lesson: any) => (
-                        <div key={lesson.id} className="flex items-center justify-between rounded-lg border p-3">
-                          <div className="flex items-center gap-3">
-                            <svg className="h-5 w-5 text-muted-foreground" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M8 5v14l11-7z" />
-                            </svg>
-                            <div>
-                              <p className="text-sm font-medium">{lesson.title}</p>
-                              {lesson.video_duration && (
-                                <p className="text-xs text-muted-foreground">
-                                  {Math.floor(lesson.video_duration / 60)}분
-                                </p>
-                              )}
+                      {section.lessons
+                        ?.sort((a: any, b: any) => a.order_index - b.order_index)
+                        .map((lesson: any) => {
+                          const isComingSoon = lesson.is_published === false
+                          return (
+                            <div
+                              key={lesson.id}
+                              className={`flex items-center justify-between rounded-lg border p-3 ${
+                                isComingSoon ? "bg-muted/50 opacity-70" : ""
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                {isComingSoon ? (
+                                  <svg className="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                ) : (
+                                  <svg className="h-5 w-5 text-muted-foreground" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z" />
+                                  </svg>
+                                )}
+                                <div>
+                                  <p className={`text-sm font-medium ${isComingSoon ? "text-muted-foreground" : ""}`}>
+                                    {lesson.title}
+                                  </p>
+                                  {isComingSoon ? (
+                                    <p className="text-xs text-muted-foreground">추후 공개 예정</p>
+                                  ) : lesson.video_duration ? (
+                                    <p className="text-xs text-muted-foreground">
+                                      {Math.floor(lesson.video_duration / 60)}분
+                                    </p>
+                                  ) : null}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {isComingSoon && <Badge variant="outline">공개 예정</Badge>}
+                                {!isComingSoon && lesson.is_free && <Badge variant="secondary">무료</Badge>}
+                              </div>
                             </div>
-                          </div>
-                          {lesson.is_free && <Badge variant="secondary">무료</Badge>}
-                        </div>
-                      ))}
+                          )
+                        })}
                     </div>
                   </div>
                 ))}

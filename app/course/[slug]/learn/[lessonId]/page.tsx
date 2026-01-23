@@ -39,10 +39,20 @@ export default async function LessonPage({
     redirect(`/course/${slug}`)
   }
 
-  // Fetch lesson
-  const { data: lesson } = await supabase.from("course_lessons").select("*").eq("id", lessonId).single()
+  // Fetch lesson with section to verify it belongs to this course
+  const { data: lesson } = await supabase
+    .from("course_lessons")
+    .select("*, section:course_sections!inner(course_id)")
+    .eq("id", lessonId)
+    .single()
 
-  if (!lesson) {
+  // Verify lesson exists AND belongs to the purchased course
+  if (!lesson || lesson.section?.course_id !== course.id) {
+    redirect(`/course/${slug}/learn`)
+  }
+
+  // Block access to unpublished lessons
+  if (lesson.is_published === false) {
     redirect(`/course/${slug}/learn`)
   }
 
