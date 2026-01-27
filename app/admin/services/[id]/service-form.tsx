@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { ImageUpload } from "@/components/image-upload"
 
 interface ServiceFormProps {
   service: {
@@ -164,13 +165,13 @@ export function ServiceForm({ service, categories }: ServiceFormProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="thumbnail_url">썸네일 URL</Label>
-                <Input
-                  id="thumbnail_url"
-                  type="url"
+                <Label>썸네일 이미지</Label>
+                <ImageUpload
                   value={formData.thumbnail_url}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, thumbnail_url: e.target.value }))}
-                  placeholder="https://..."
+                  onChange={(url) => setFormData((prev) => ({ ...prev, thumbnail_url: url }))}
+                  bucket="thumbnails"
+                  folder="services"
+                  aspectRatio="16/9"
                 />
               </div>
 
