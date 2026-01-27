@@ -17,6 +17,7 @@ interface Lesson {
   video_duration?: number
   order_index: number
   is_free: boolean
+  is_published: boolean
   isNew?: boolean
 }
 
@@ -71,6 +72,7 @@ export function CurriculumEditor({ courseId, initialSections }: CurriculumEditor
       title: `레슨 ${section.lessons.length + 1}`,
       order_index: section.lessons.length,
       is_free: false,
+      is_published: true,
       isNew: true,
     }
     updateSection(sectionIndex, {
@@ -130,6 +132,7 @@ export function CurriculumEditor({ courseId, initialSections }: CurriculumEditor
             video_duration: lesson.video_duration || null,
             order_index: lessonIndex,
             is_free: lesson.is_free,
+            is_published: lesson.is_published ?? true,
           }))
 
           const { error: lessonsError } = await supabase
@@ -272,14 +275,25 @@ export function CurriculumEditor({ courseId, initialSections }: CurriculumEditor
                               className="text-sm"
                             />
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Switch
-                              checked={lesson.is_free}
-                              onCheckedChange={(checked) =>
-                                updateLesson(sectionIndex, lessonIndex, { is_free: checked })
-                              }
-                            />
-                            <Label className="text-sm">무료 공개</Label>
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={lesson.is_published ?? true}
+                                onCheckedChange={(checked) =>
+                                  updateLesson(sectionIndex, lessonIndex, { is_published: checked })
+                                }
+                              />
+                              <Label className="text-sm">{lesson.is_published === false ? "공개 예정" : "공개됨"}</Label>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={lesson.is_free}
+                                onCheckedChange={(checked) =>
+                                  updateLesson(sectionIndex, lessonIndex, { is_free: checked })
+                                }
+                              />
+                              <Label className="text-sm">무료 공개</Label>
+                            </div>
                           </div>
                         </div>
                         <Button
