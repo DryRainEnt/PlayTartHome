@@ -58,10 +58,10 @@ export function FileUpload({
       }
 
       try {
-        // 파일명 생성 (중복 방지)
-        const fileExt = file.name.split(".").pop()
-        const baseName = file.name.replace(/\.[^/.]+$/, "")
-        const fileName = `${Date.now()}-${baseName}.${fileExt}`
+        // 파일명 생성 (한글 등 특수문자 제거, 중복 방지)
+        const fileExt = file.name.split(".").pop()?.toLowerCase() || "file"
+        const randomId = Math.random().toString(36).substring(2, 10)
+        const fileName = `${Date.now()}-${randomId}.${fileExt}`
         const filePath = `${folder}/${fileName}`
 
         // Supabase Storage에 업로드
