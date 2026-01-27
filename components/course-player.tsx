@@ -22,6 +22,7 @@ import {
   Home,
   Clock,
 } from "lucide-react"
+import { AttachmentList } from "./file-upload"
 
 interface CoursePlayerProps {
   course: any
@@ -309,6 +310,16 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
                   <p className="text-muted-foreground">{currentLesson.description}</p>
                 )}
               </div>
+
+              {/* Attachments */}
+              {currentLesson.attachments && currentLesson.attachments.length > 0 && (
+                <div className="mb-8 p-4 rounded-lg border bg-muted/30">
+                  <AttachmentList
+                    attachments={currentLesson.attachments}
+                    courseId={course.id}
+                  />
+                </div>
+              )}
 
               {/* Actions */}
               <div className="flex flex-wrap items-center gap-3 mb-8">

@@ -7,7 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Plus, Trash2, GripVertical, ChevronDown, ChevronRight, Video } from "lucide-react"
+import { Plus, Trash2, GripVertical, ChevronDown, ChevronRight, Video, Paperclip } from "lucide-react"
+import { FileUpload } from "@/components/file-upload"
+
+interface Attachment {
+  name: string
+  url: string
+  size: number
+}
 
 interface Lesson {
   id?: string
@@ -18,6 +25,7 @@ interface Lesson {
   order_index: number
   is_free: boolean
   is_published: boolean
+  attachments: Attachment[]
   isNew?: boolean
 }
 
@@ -73,6 +81,7 @@ export function CurriculumEditor({ courseId, initialSections }: CurriculumEditor
       order_index: section.lessons.length,
       is_free: false,
       is_published: true,
+      attachments: [],
       isNew: true,
     }
     updateSection(sectionIndex, {
@@ -133,6 +142,7 @@ export function CurriculumEditor({ courseId, initialSections }: CurriculumEditor
             order_index: lessonIndex,
             is_free: lesson.is_free,
             is_published: lesson.is_published ?? true,
+            attachments: lesson.attachments || [],
           }))
 
           const { error: lessonsError } = await supabase
@@ -294,6 +304,23 @@ export function CurriculumEditor({ courseId, initialSections }: CurriculumEditor
                               />
                               <Label className="text-sm">무료 공개</Label>
                             </div>
+                          </div>
+                          {/* 첨부파일 */}
+                          <div className="pt-2 border-t">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Paperclip className="h-4 w-4 text-muted-foreground" />
+                              <Label className="text-sm">첨부파일</Label>
+                            </div>
+                            <FileUpload
+                              value={lesson.attachments || []}
+                              onChange={(attachments) =>
+                                updateLesson(sectionIndex, lessonIndex, { attachments })
+                              }
+                              bucket="attachments"
+                              folder={courseId}
+                              maxFiles={5}
+                              maxSizeMB={50}
+                            />
                           </div>
                         </div>
                         <Button
