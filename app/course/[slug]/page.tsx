@@ -246,17 +246,6 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
                   </svg>
                   <span>모바일 및 PC 접근</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <svg className="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  <span>수료증 제공</span>
-                </div>
               </div>
             </CardContent>
           </Card>
