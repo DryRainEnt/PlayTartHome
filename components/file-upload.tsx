@@ -207,17 +207,26 @@ export function AttachmentList({ attachments, courseId }: AttachmentListProps) {
       // Signed URL 생성 (1시간 유효)
       const { data, error } = await supabase.storage
         .from("attachments")
-        .createSignedUrl(attachment.url, 3600)
+        .createSignedUrl(attachment.url, 3600, {
+          download: attachment.name, // Content-Disposition 헤더 설정
+        })
 
       if (error) throw error
 
-      // 다운로드
+      // Blob으로 다운로드 (cross-origin 문제 해결)
+      const response = await fetch(data.signedUrl)
+      const blob = await response.blob()
+      const blobUrl = URL.createObjectURL(blob)
+
       const link = document.createElement("a")
-      link.href = data.signedUrl
+      link.href = blobUrl
       link.download = attachment.name
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
+
+      // Blob URL 해제
+      URL.revokeObjectURL(blobUrl)
     } catch (err) {
       console.error("Download error:", err)
       alert("다운로드에 실패했습니다")
