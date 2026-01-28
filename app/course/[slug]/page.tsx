@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { PageViewTracker } from "@/components/page-view-tracker"
 import { CourseJsonLd } from "@/components/json-ld"
+import ReactMarkdown from "react-markdown"
 import type { Metadata } from "next"
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://play-t.art"
@@ -128,7 +129,9 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
           </div>
 
           <h1 className="mb-4 text-4xl font-bold">{course.title}</h1>
-          <p className="mb-6 text-lg text-muted-foreground">{course.description}</p>
+          <div className="mb-6 text-lg text-muted-foreground prose prose-neutral dark:prose-invert max-w-none">
+            <ReactMarkdown>{course.description || ""}</ReactMarkdown>
+          </div>
 
           <div className="mb-8 flex items-center gap-6 text-sm text-muted-foreground">
             <span>강사: {course.instructor_name}</span>
