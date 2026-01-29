@@ -226,30 +226,6 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
                 </Button>
               )}
 
-              <div className="mt-6 space-y-3 border-t pt-6 text-sm">
-                <div className="flex items-center gap-2">
-                  <svg className="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  <span>평생 수강 가능</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <svg className="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
-                    />
-                  </svg>
-                  <span>모바일 및 PC 접근</span>
-                </div>
-              </div>
             </CardContent>
           </Card>
         </div>
