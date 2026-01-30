@@ -29,7 +29,7 @@ export default async function AdminDashboard() {
     .from("course_purchases")
     .select("*, user:profiles!course_purchases_user_id_fkey(full_name, email), course:courses(title)")
     .eq("status", "completed")
-    .order("created_at", { ascending: false })
+    .order("purchased_at", { ascending: false })
     .limit(5)
 
   const { data: recentProductPurchases } = await supabase
@@ -39,12 +39,12 @@ export default async function AdminDashboard() {
     .order("created_at", { ascending: false })
     .limit(5)
 
-  // 두 구매 목록 합치고 최신순 정렬
+  // 두 구매 목록 합치고 최신순 정렬 (각 테이블의 날짜 컬럼명이 다름)
   const recentOrders = [
-    ...(recentCoursePurchases || []).map(p => ({ ...p, type: "course", title: p.course?.title })),
-    ...(recentProductPurchases || []).map(p => ({ ...p, type: "product", title: p.product?.title })),
+    ...(recentCoursePurchases || []).map(p => ({ ...p, type: "course", title: p.course?.title, order_date: p.purchased_at })),
+    ...(recentProductPurchases || []).map(p => ({ ...p, type: "product", title: p.product?.title, order_date: p.created_at })),
   ]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .sort((a, b) => new Date(b.order_date).getTime() - new Date(a.order_date).getTime())
     .slice(0, 5)
 
   const stats = [
@@ -99,7 +99,7 @@ export default async function AdminDashboard() {
                       {order.title} ({order.type === "course" ? "강의" : "제품"})
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(order.created_at).toLocaleDateString("ko-KR")}
+                      {new Date(order.order_date).toLocaleDateString("ko-KR")}
                     </p>
                   </div>
                   <div className="text-right">
