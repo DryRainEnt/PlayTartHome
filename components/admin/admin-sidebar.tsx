@@ -9,6 +9,7 @@ import {
   Settings,
   BarChart3,
   Mail,
+  ShoppingCart,
   type LucideIcon,
 } from "lucide-react"
 
@@ -21,6 +22,7 @@ export interface AdminNavItem {
 export const adminNavItems: AdminNavItem[] = [
   { href: "/admin", label: "대시보드", icon: LayoutDashboard },
   { href: "/admin/analytics", label: "통계 분석", icon: BarChart3 },
+  { href: "/admin/orders", label: "주문 관리", icon: ShoppingCart },
   { href: "/admin/courses", label: "강의 관리", icon: BookOpen },
   { href: "/admin/services", label: "외주 서비스 관리", icon: Palette },
   { href: "/admin/subscribers", label: "구독자 관리", icon: Mail },
