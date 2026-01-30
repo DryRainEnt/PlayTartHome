@@ -88,26 +88,35 @@ export default async function ProductPurchaseSuccessPage({
       if (!result.ok) {
         paymentError = result.data.message || "결제 승인에 실패했습니다"
       } else {
-        // 결제 승인 성공 - 구매 기록 생성
-        const { data: newPurchase, error: insertError } = await supabase
-          .from("product_purchases")
-          .insert({
-            user_id: user.id,
-            product_id: product.id,
-            amount_paid: amountNumber,
-            payment_method: result.data.method || "카드",
-            status: "completed",
-            order_id: orderId,
-            payment_id: paymentKey,
-          })
-          .select()
-          .single()
+        // 토스에서 승인된 실제 금액 사용 (URL 파라미터 조작 방지)
+        const confirmedAmount = result.data.totalAmount
 
-        if (insertError) {
-          console.error("Insert error:", insertError)
-          paymentError = "구매 기록 저장에 실패했습니다"
+        // 제품 가격과 결제 금액 검증
+        if (confirmedAmount !== product.price) {
+          console.error("Amount mismatch:", { expected: product.price, confirmed: confirmedAmount })
+          paymentError = "결제 금액이 제품 가격과 일치하지 않습니다"
         } else {
-          purchase = newPurchase
+          // 결제 승인 성공 - 구매 기록 생성
+          const { data: newPurchase, error: insertError } = await supabase
+            .from("product_purchases")
+            .insert({
+              user_id: user.id,
+              product_id: product.id,
+              amount_paid: confirmedAmount,
+              payment_method: result.data.method || "카드",
+              status: "completed",
+              order_id: orderId,
+              payment_id: paymentKey,
+            })
+            .select()
+            .single()
+
+          if (insertError) {
+            console.error("Insert error:", insertError)
+            paymentError = "구매 기록 저장에 실패했습니다"
+          } else {
+            purchase = newPurchase
+          }
         }
       }
     }
