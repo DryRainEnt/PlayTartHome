@@ -1,6 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
 import {
   getKPIStats,
   getDailyTrend,
@@ -12,11 +11,20 @@ import { TrendingUp, TrendingDown, Users, Eye, UserPlus, Activity } from "lucide
 import { VisitorChart } from "./components/visitor-chart"
 import { TopContentTable } from "./components/top-content-table"
 import { ResourceTypeChart } from "./components/resource-type-chart"
+import { DateRangeSelector } from "./components/date-range-selector"
+import { ResourceTraffic } from "./components/resource-traffic"
 
-export default async function AnalyticsPage() {
+export default async function AnalyticsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ days?: string }>
+}) {
+  const resolvedParams = await searchParams
+  const days = Math.min(Math.max(parseInt(resolvedParams.days || "14", 10), 7), 90)
+
   const [kpi, dailyTrend, topContent, activeUsers, resourceViews] = await Promise.all([
     getKPIStats(),
-    getDailyTrend(14),
+    getDailyTrend(days),
     getTopViewedContent(10),
     getActiveUsers(7),
     getViewsByResourceType(),
@@ -24,9 +32,12 @@ export default async function AnalyticsPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">통계 분석</h1>
-        <p className="text-muted-foreground">사이트 방문자 및 콘텐츠 분석</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">통계 분석</h1>
+          <p className="text-muted-foreground">사이트 방문자 및 콘텐츠 분석</p>
+        </div>
+        <DateRangeSelector />
       </div>
 
       {/* KPI Cards */}
@@ -115,7 +126,7 @@ export default async function AnalyticsPage() {
         <Card className="lg:col-span-4">
           <CardHeader>
             <CardTitle>방문자 추이</CardTitle>
-            <CardDescription>최근 14일 방문자 및 페이지뷰</CardDescription>
+            <CardDescription>최근 {days}일 방문자 및 페이지뷰</CardDescription>
           </CardHeader>
           <CardContent>
             <VisitorChart data={dailyTrend} />
@@ -137,6 +148,7 @@ export default async function AnalyticsPage() {
       <Tabs defaultValue="top-content" className="space-y-4">
         <TabsList>
           <TabsTrigger value="top-content">조회수 TOP 10</TabsTrigger>
+          <TabsTrigger value="resource-traffic">상세 트래픽</TabsTrigger>
           <TabsTrigger value="users">사용자 분석</TabsTrigger>
         </TabsList>
 
@@ -148,6 +160,18 @@ export default async function AnalyticsPage() {
             </CardHeader>
             <CardContent>
               <TopContentTable data={topContent} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="resource-traffic">
+          <Card>
+            <CardHeader>
+              <CardTitle>리소스별 트래픽</CardTitle>
+              <CardDescription>개별 콘텐츠의 일별 조회수 추이를 확인합니다</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResourceTraffic />
             </CardContent>
           </Card>
         </TabsContent>

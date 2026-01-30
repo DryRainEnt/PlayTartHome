@@ -1,6 +1,9 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { getSiteSettings } from "@/lib/site-settings"
+import { SettingsForm } from "./settings-form"
 
-export default function AdminSettingsPage() {
+export default async function AdminSettingsPage() {
+  const settings = await getSiteSettings()
+
   return (
     <div>
       <div className="mb-8">
@@ -8,17 +11,7 @@ export default function AdminSettingsPage() {
         <p className="text-muted-foreground">사이트 설정을 관리합니다</p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>사이트 설정</CardTitle>
-          <CardDescription>추후 구현 예정입니다</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            사이트 이름, 로고, SEO 설정 등을 관리할 수 있는 기능이 추가될 예정입니다.
-          </p>
-        </CardContent>
-      </Card>
+      <SettingsForm initialSettings={settings} />
     </div>
   )
 }

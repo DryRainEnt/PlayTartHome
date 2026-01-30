@@ -272,3 +272,100 @@ export async function getViewsByResourceType() {
     }[type] || type,
   }))
 }
+
+// 리소스 목록 조회 (타입별)
+export async function getResourceList(resourceType: string) {
+  const supabase = await createClient()
+
+  switch (resourceType) {
+    case "course": {
+      const { data } = await supabase
+        .from("courses")
+        .select("id, title, slug, view_count")
+        .eq("is_published", true)
+        .order("view_count", { ascending: false })
+      return data?.map((item) => ({
+        id: item.id,
+        title: item.title,
+        slug: item.slug,
+        viewCount: item.view_count || 0,
+      })) || []
+    }
+    case "service": {
+      const { data } = await supabase
+        .from("services")
+        .select("id, title, slug, view_count")
+        .eq("is_published", true)
+        .order("view_count", { ascending: false })
+      return data?.map((item) => ({
+        id: item.id,
+        title: item.title,
+        slug: item.slug,
+        viewCount: item.view_count || 0,
+      })) || []
+    }
+    case "product": {
+      const { data } = await supabase
+        .from("products")
+        .select("id, title, slug, view_count")
+        .eq("is_published", true)
+        .order("view_count", { ascending: false })
+      return data?.map((item) => ({
+        id: item.id,
+        title: item.title,
+        slug: item.slug,
+        viewCount: item.view_count || 0,
+      })) || []
+    }
+    case "forum_post": {
+      const { data } = await supabase
+        .from("forum_posts")
+        .select("id, title, view_count")
+        .order("view_count", { ascending: false })
+        .limit(50)
+      return data?.map((item) => ({
+        id: item.id,
+        title: item.title,
+        slug: item.id,
+        viewCount: item.view_count || 0,
+      })) || []
+    }
+    default:
+      return []
+  }
+}
+
+// 특정 리소스의 일별 트래픽 추이
+export async function getResourceTrend(
+  resourceType: string,
+  resourceSlug: string,
+  days: number = 14
+): Promise<{ date: string; views: number }[]> {
+  const supabase = await createClient()
+  const results: { date: string; views: number }[] = []
+
+  for (let i = days - 1; i >= 0; i--) {
+    const date = new Date()
+    date.setDate(date.getDate() - i)
+    date.setHours(0, 0, 0, 0)
+
+    const nextDate = new Date(date)
+    nextDate.setDate(nextDate.getDate() + 1)
+
+    const { count } = await supabase
+      .from("activity_logs")
+      .select("*", { count: "exact", head: true })
+      .eq("action_type", "page_view")
+      .eq("resource_type", resourceType)
+      .eq("resource_slug", resourceSlug)
+      .gte("created_at", date.toISOString())
+      .lt("created_at", nextDate.toISOString())
+
+    results.push({
+      date: date.toLocaleDateString("ko-KR", { month: "short", day: "numeric" }),
+      views: count || 0,
+    })
+  }
+
+  return results
+}
