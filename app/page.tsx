@@ -257,7 +257,14 @@ export default async function HomePage() {
                     <CardContent>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">{course.instructor_name}</span>
-                        <span className="text-lg font-bold text-primary">₩{course.price?.toLocaleString()}</span>
+                        <div className="text-right">
+                          {course.original_price && course.original_price > course.price && (
+                            <span className="mr-2 text-sm text-muted-foreground line-through">
+                              ₩{course.original_price.toLocaleString()}
+                            </span>
+                          )}
+                          <span className="text-lg font-bold text-primary">₩{course.price?.toLocaleString()}</span>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
