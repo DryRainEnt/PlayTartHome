@@ -23,6 +23,7 @@ import {
   Clock,
 } from "lucide-react"
 import { AttachmentList } from "./file-upload"
+import { LessonComments } from "./lesson-comments"
 
 interface CoursePlayerProps {
   course: any
@@ -361,6 +362,11 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
                     </Link>
                   </Button>
                 )}
+              </div>
+
+              {/* Comments Section */}
+              <div className="border-t pt-8 mt-8">
+                <LessonComments lessonId={currentLesson.id} userId={userId} />
               </div>
             </div>
           </div>
