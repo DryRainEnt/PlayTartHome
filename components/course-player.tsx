@@ -96,6 +96,14 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
           last_watched_at: new Date().toISOString(),
         })
         .select()
+
+      // Auto-complete if watched 90% or more
+      if (!isCompleted && currentLesson.video_duration) {
+        const watchedPercent = (currentTime / currentLesson.video_duration) * 100
+        if (watchedPercent >= 90) {
+          await handleMarkComplete()
+        }
+      }
     }
   }
 
