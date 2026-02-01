@@ -37,6 +37,177 @@ function isYouTubeUrl(url: string): boolean {
   return url.includes("youtube.com") || url.includes("youtu.be")
 }
 
+// YouTube IFrame API 타입
+declare global {
+  interface Window {
+    YT: {
+      Player: new (
+        elementId: string | HTMLElement,
+        config: {
+          videoId: string
+          playerVars?: Record<string, number | string>
+          events?: {
+            onReady?: (event: { target: YTPlayer }) => void
+            onStateChange?: (event: { data: number; target: YTPlayer }) => void
+          }
+        }
+      ) => YTPlayer
+      PlayerState: {
+        ENDED: number
+        PLAYING: number
+        PAUSED: number
+        BUFFERING: number
+        CUED: number
+      }
+    }
+    onYouTubeIframeAPIReady?: () => void
+  }
+}
+
+interface YTPlayer {
+  playVideo: () => void
+  pauseVideo: () => void
+  seekTo: (seconds: number, allowSeekAhead: boolean) => void
+  getCurrentTime: () => number
+  getDuration: () => number
+  getPlayerState: () => number
+  setVolume: (volume: number) => void
+  getVolume: () => number
+  mute: () => void
+  unMute: () => void
+  isMuted: () => boolean
+  destroy: () => void
+}
+
+// YouTube API 로드 상태
+let youtubeApiLoaded = false
+let youtubeApiLoading = false
+const youtubeApiCallbacks: (() => void)[] = []
+
+function loadYouTubeApi(): Promise<void> {
+  return new Promise((resolve) => {
+    if (youtubeApiLoaded) {
+      resolve()
+      return
+    }
+
+    youtubeApiCallbacks.push(resolve)
+
+    if (youtubeApiLoading) {
+      return
+    }
+
+    youtubeApiLoading = true
+
+    const tag = document.createElement("script")
+    tag.src = "https://www.youtube.com/iframe_api"
+    const firstScriptTag = document.getElementsByTagName("script")[0]
+    firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag)
+
+    window.onYouTubeIframeAPIReady = () => {
+      youtubeApiLoaded = true
+      youtubeApiLoading = false
+      youtubeApiCallbacks.forEach((cb) => cb())
+      youtubeApiCallbacks.length = 0
+    }
+  })
+}
+
+// YouTube Player Component
+function YouTubePlayer({
+  videoId,
+  onTimeUpdate,
+  onEnded,
+  initialTime = 0,
+}: {
+  videoId: string
+  onTimeUpdate?: (currentTime: number) => void
+  onEnded?: () => void
+  initialTime?: number
+}) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const playerRef = useRef<YTPlayer | null>(null)
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const playerIdRef = useRef(`yt-player-${Math.random().toString(36).substr(2, 9)}`)
+  const [isReady, setIsReady] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+
+    const initPlayer = async () => {
+      await loadYouTubeApi()
+
+      if (!mounted || !containerRef.current) return
+
+      // Create player container
+      const playerDiv = document.createElement("div")
+      playerDiv.id = playerIdRef.current
+      containerRef.current.appendChild(playerDiv)
+
+      playerRef.current = new window.YT.Player(playerIdRef.current, {
+        videoId,
+        playerVars: {
+          autoplay: 0,
+          rel: 0,
+          modestbranding: 1,
+          start: Math.floor(initialTime),
+        },
+        events: {
+          onReady: (event) => {
+            if (!mounted) return
+            setIsReady(true)
+
+            // Start time tracking interval
+            intervalRef.current = setInterval(() => {
+              if (playerRef.current) {
+                const state = playerRef.current.getPlayerState()
+                // Only track when playing
+                if (state === window.YT.PlayerState.PLAYING) {
+                  const currentTime = playerRef.current.getCurrentTime()
+                  onTimeUpdate?.(currentTime)
+                }
+              }
+            }, 10000) // Every 10 seconds, matching HTML5 player behavior
+          },
+          onStateChange: (event) => {
+            if (!mounted) return
+            // Video ended
+            if (event.data === window.YT.PlayerState.ENDED) {
+              onEnded?.()
+            }
+          },
+        },
+      })
+    }
+
+    initPlayer()
+
+    return () => {
+      mounted = false
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+      }
+      if (playerRef.current) {
+        try {
+          playerRef.current.destroy()
+        } catch (e) {
+          // Player might already be destroyed
+        }
+      }
+    }
+  }, [videoId, initialTime, onTimeUpdate, onEnded])
+
+  return (
+    <div ref={containerRef} className="relative w-full h-full bg-black">
+      {!isReady && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: VideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -250,21 +421,15 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
 
   const playbackRates = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
 
-  // YouTube embed
+  // YouTube Player with API
   if (isYouTube && youtubeVideoId) {
-    const startTime = initialTime > 0 ? `&start=${Math.floor(initialTime)}` : ""
-
     return (
-      <div
-        ref={containerRef}
-        className="relative w-full h-full bg-black"
-      >
-        <iframe
-          src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=0&rel=0&modestbranding=1${startTime}`}
-          className="absolute inset-0 w-full h-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          title="YouTube video player"
+      <div ref={containerRef} className="relative w-full h-full bg-black">
+        <YouTubePlayer
+          videoId={youtubeVideoId}
+          onTimeUpdate={onTimeUpdate}
+          onEnded={onEnded}
+          initialTime={initialTime}
         />
       </div>
     )
