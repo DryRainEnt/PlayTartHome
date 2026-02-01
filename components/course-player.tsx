@@ -38,6 +38,7 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false)
   const [isCompleted, setIsCompleted] = useState(initialProgress?.is_completed || false)
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set())
+  const [lessonProgress, setLessonProgress] = useState<Map<string, { watchTime: number; isCompleted: boolean }>>(new Map())
   const router = useRouter()
   const supabase = createClient()
 
@@ -46,13 +47,13 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
     const fetchProgress = async () => {
       const { data } = await supabase
         .from("lesson_progress")
-        .select("lesson_id, is_completed")
+        .select("lesson_id, is_completed, watch_time")
         .eq("user_id", userId)
         .eq("course_id", course.id)
-        .eq("is_completed", true)
 
       if (data) {
-        setCompletedLessons(new Set(data.map((p) => p.lesson_id)))
+        setCompletedLessons(new Set(data.filter(p => p.is_completed).map((p) => p.lesson_id)))
+        setLessonProgress(new Map(data.map(p => [p.lesson_id, { watchTime: p.watch_time || 0, isCompleted: p.is_completed }])))
       }
     }
     fetchProgress()
@@ -76,26 +77,58 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
   const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null
   const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null
 
-  // Calculate progress (only published lessons count)
+  // Calculate progress based on watch time ratio for each lesson
   const totalLessons = allLessons.length
   const completedCount = Array.from(completedLessons).filter(id =>
     allLessons.some(l => l.id === id)
   ).length + (isCompleted && !completedLessons.has(currentLesson.id) ? 1 : 0)
-  const progressPercent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0
+
+  // Calculate weighted progress based on watch time
+  const progressPercent = useMemo(() => {
+    if (totalLessons === 0) return 0
+
+    let totalProgress = 0
+    for (const lesson of allLessons) {
+      const progress = lessonProgress.get(lesson.id)
+      const isLessonCompleted = completedLessons.has(lesson.id) || (lesson.id === currentLesson.id && isCompleted)
+
+      if (isLessonCompleted) {
+        // Completed lesson = 100%
+        totalProgress += 100
+      } else if (progress && lesson.video_duration && lesson.video_duration > 0) {
+        // Calculate based on watch time ratio (capped at 100%)
+        const watchPercent = Math.min((progress.watchTime / lesson.video_duration) * 100, 100)
+        totalProgress += watchPercent
+      }
+      // Lessons without video_duration or progress count as 0%
+    }
+
+    return Math.round(totalProgress / totalLessons)
+  }, [allLessons, lessonProgress, completedLessons, currentLesson.id, isCompleted, totalLessons])
 
   const handleTimeUpdate = async (currentTime: number) => {
     // Update watch time every 10 seconds
     if (Math.floor(currentTime) % 10 === 0) {
+      const watchTime = Math.floor(currentTime)
+
       await supabase
         .from("lesson_progress")
         .upsert({
           user_id: userId,
           lesson_id: currentLesson.id,
           course_id: course.id,
-          watch_time: Math.floor(currentTime),
+          watch_time: watchTime,
           last_watched_at: new Date().toISOString(),
         })
         .select()
+
+      // Update local state for real-time progress display
+      setLessonProgress(prev => {
+        const next = new Map(prev)
+        const existing = next.get(currentLesson.id)
+        next.set(currentLesson.id, { watchTime, isCompleted: existing?.isCompleted || false })
+        return next
+      })
 
       // Auto-complete if watched 90% or more
       if (!isCompleted && currentLesson.video_duration) {
