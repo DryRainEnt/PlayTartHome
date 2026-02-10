@@ -11,6 +11,7 @@ import {
   Mail,
   ShoppingCart,
   GraduationCap,
+  Package,
   type LucideIcon,
 } from "lucide-react"
 
@@ -26,6 +27,7 @@ export const adminNavItems: AdminNavItem[] = [
   { href: "/admin/orders", label: "주문 관리", icon: ShoppingCart },
   { href: "/admin/students", label: "수강생 관리", icon: GraduationCap },
   { href: "/admin/courses", label: "강의 관리", icon: BookOpen },
+  { href: "/admin/products", label: "제품 관리", icon: Package },
   { href: "/admin/services", label: "외주 서비스 관리", icon: Palette },
   { href: "/admin/subscribers", label: "구독자 관리", icon: Mail },
   { href: "/admin/users", label: "사용자 관리", icon: Users },

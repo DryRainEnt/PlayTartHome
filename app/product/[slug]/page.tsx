@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import Link from "next/link"
 import {
   ArrowLeft,
@@ -16,6 +15,9 @@ import {
 } from "lucide-react"
 import { PageViewTracker } from "@/components/page-view-tracker"
 import { ProductJsonLd } from "@/components/json-ld"
+import { ProductImageGallery } from "@/components/product-image-gallery"
+import ReactMarkdown from "react-markdown"
+import remarkBreaks from "remark-breaks"
 import type { Metadata } from "next"
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://play-t.art"
@@ -132,41 +134,11 @@ export default async function ProductDetailPage({
 
       <div className="grid gap-8 lg:grid-cols-2">
         {/* Product Images */}
-        <div className="space-y-4">
-          <div className="aspect-square overflow-hidden rounded-lg bg-muted">
-            {product.thumbnail_url ? (
-              <img
-                src={product.thumbnail_url}
-                alt={product.title}
-                className="h-full w-full object-cover"
-                style={{ imageRendering: "pixelated" }}
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                제품 이미지
-              </div>
-            )}
-          </div>
-
-          {/* Preview images */}
-          {product.preview_images && product.preview_images.length > 0 && (
-            <div className="grid grid-cols-4 gap-2">
-              {product.preview_images.slice(0, 4).map((img: string, idx: number) => (
-                <div
-                  key={idx}
-                  className="aspect-square overflow-hidden rounded-lg bg-muted"
-                >
-                  <img
-                    src={img}
-                    alt={`${product.title} preview ${idx + 1}`}
-                    className="h-full w-full object-cover"
-                    style={{ imageRendering: "pixelated" }}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <ProductImageGallery
+          thumbnailUrl={product.thumbnail_url}
+          previewImages={product.preview_images}
+          title={product.title}
+        />
 
         {/* Product Info */}
         <div>
@@ -179,7 +151,9 @@ export default async function ProductDetailPage({
           <h1 className="mb-4 text-3xl font-bold">{product.title}</h1>
 
           {product.description && (
-            <p className="mb-6 text-lg text-muted-foreground">{product.description}</p>
+            <div className="mb-6 text-lg text-muted-foreground prose prose-neutral dark:prose-invert max-w-none">
+              <ReactMarkdown remarkPlugins={[remarkBreaks]}>{product.description}</ReactMarkdown>
+            </div>
           )}
 
           {/* Stats */}
@@ -199,30 +173,32 @@ export default async function ProductDetailPage({
           </div>
 
           {/* File Info */}
-          <Card className="mb-6">
-            <CardContent className="p-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                {product.file_format && (
-                  <div className="flex items-center gap-2">
-                    <FileType className="h-4 w-4 text-muted-foreground" />
-                    <span>
-                      <span className="text-muted-foreground">포맷: </span>
-                      {product.file_format}
-                    </span>
-                  </div>
-                )}
-                {product.file_size && (
-                  <div className="flex items-center gap-2">
-                    <HardDrive className="h-4 w-4 text-muted-foreground" />
-                    <span>
-                      <span className="text-muted-foreground">크기: </span>
-                      {product.file_size}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          {(product.file_format || product.file_size) && (
+            <Card className="mb-6">
+              <CardContent className="p-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  {product.file_format && (
+                    <div className="flex items-center gap-2">
+                      <FileType className="h-4 w-4 text-muted-foreground" />
+                      <span>
+                        <span className="text-muted-foreground">포맷: </span>
+                        {product.file_format}
+                      </span>
+                    </div>
+                  )}
+                  {product.file_size && (
+                    <div className="flex items-center gap-2">
+                      <HardDrive className="h-4 w-4 text-muted-foreground" />
+                      <span>
+                        <span className="text-muted-foreground">크기: </span>
+                        {product.file_size}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Price & Purchase */}
           <Card>
@@ -280,8 +256,10 @@ export default async function ProductDetailPage({
         <div className="mt-12">
           <h2 className="mb-6 text-2xl font-bold">상세 설명</h2>
           <Card>
-            <CardContent className="prose max-w-none p-6 dark:prose-invert">
-              <div className="whitespace-pre-wrap">{product.content}</div>
+            <CardContent className="p-6">
+              <div className="prose prose-neutral max-w-none dark:prose-invert">
+                <ReactMarkdown remarkPlugins={[remarkBreaks]}>{product.content}</ReactMarkdown>
+              </div>
             </CardContent>
           </Card>
         </div>
