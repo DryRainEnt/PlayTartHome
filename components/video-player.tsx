@@ -15,6 +15,7 @@ interface VideoPlayerProps {
   src: string
   onTimeUpdate?: (currentTime: number) => void
   onEnded?: () => void
+  onDurationDetected?: (duration: number) => void
   initialTime?: number
 }
 
@@ -118,11 +119,13 @@ function YouTubePlayer({
   videoId,
   onTimeUpdate,
   onEnded,
+  onDurationDetected,
   initialTime = 0,
 }: {
   videoId: string
   onTimeUpdate?: (currentTime: number) => void
   onEnded?: () => void
+  onDurationDetected?: (duration: number) => void
   initialTime?: number
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -156,6 +159,12 @@ function YouTubePlayer({
           onReady: (event) => {
             if (!mounted) return
             setIsReady(true)
+
+            // Get video duration and notify
+            const duration = event.target.getDuration()
+            if (duration && duration > 0) {
+              onDurationDetected?.(Math.floor(duration))
+            }
 
             // Start time tracking interval
             intervalRef.current = setInterval(() => {
@@ -195,7 +204,7 @@ function YouTubePlayer({
         }
       }
     }
-  }, [videoId, initialTime, onTimeUpdate, onEnded])
+  }, [videoId, initialTime, onTimeUpdate, onEnded, onDurationDetected])
 
   return (
     <div ref={containerRef} className="relative w-full h-full bg-black">
@@ -208,7 +217,7 @@ function YouTubePlayer({
   )
 }
 
-export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: VideoPlayerProps) {
+export function VideoPlayer({ src, onTimeUpdate, onEnded, onDurationDetected, initialTime = 0 }: VideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -248,6 +257,9 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
 
     const handleLoadedMetadata = () => {
       setDuration(video.duration)
+      if (video.duration && video.duration > 0) {
+        onDurationDetected?.(Math.floor(video.duration))
+      }
       if (initialTime > 0) {
         video.currentTime = initialTime
       }
@@ -429,6 +441,7 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }: Vid
           videoId={youtubeVideoId}
           onTimeUpdate={onTimeUpdate}
           onEnded={onEnded}
+          onDurationDetected={onDurationDetected}
           initialTime={initialTime}
         />
       </div>
