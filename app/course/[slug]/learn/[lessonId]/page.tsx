@@ -10,33 +10,11 @@ export default async function LessonPage({
   const { slug, lessonId } = await params
   const supabase = await createClient()
 
-  // Get current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/auth/login")
-  }
-
   // Fetch course
   const { data: course } = await supabase.from("courses").select("*").eq("slug", slug).single()
 
   if (!course) {
     redirect("/course")
-  }
-
-  // Check if user has purchased
-  const { data: purchase } = await supabase
-    .from("course_purchases")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("course_id", course.id)
-    .eq("status", "completed")
-    .single()
-
-  if (!purchase) {
-    redirect(`/course/${slug}`)
   }
 
   // Fetch lesson with section to verify it belongs to this course
@@ -46,7 +24,7 @@ export default async function LessonPage({
     .eq("id", lessonId)
     .single()
 
-  // Verify lesson exists AND belongs to the purchased course
+  // Verify lesson exists AND belongs to this course
   if (!lesson || lesson.section?.course_id !== course.id) {
     redirect(`/course/${slug}/learn`)
   }
@@ -56,6 +34,30 @@ export default async function LessonPage({
     redirect(`/course/${slug}/learn`)
   }
 
+  // Get current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  // Check if user has purchased
+  let hasPurchased = false
+  if (user) {
+    const { data: purchase } = await supabase
+      .from("course_purchases")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("course_id", course.id)
+      .eq("status", "completed")
+      .single()
+
+    hasPurchased = !!purchase
+  }
+
+  // Access control: free lessons are open, paid lessons require purchase
+  if (!lesson.is_free && !hasPurchased) {
+    redirect(`/course/${slug}`)
+  }
+
   // Fetch all sections and lessons
   const { data: sections } = await supabase
     .from("course_sections")
@@ -63,20 +65,26 @@ export default async function LessonPage({
     .eq("course_id", course.id)
     .order("order_index")
 
-  // Get user progress
-  const { data: progress } = await supabase
-    .from("lesson_progress")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("lesson_id", lessonId)
-    .single()
+  // Get user progress (only if logged in)
+  let progress = null
+  if (user) {
+    const { data } = await supabase
+      .from("lesson_progress")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("lesson_id", lessonId)
+      .single()
+
+    progress = data
+  }
 
   return (
     <CoursePlayer
       course={course}
       currentLesson={lesson}
       sections={sections || []}
-      userId={user.id}
+      userId={user?.id || null}
+      hasPurchased={hasPurchased}
       initialProgress={progress}
     />
   )

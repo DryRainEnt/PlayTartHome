@@ -203,12 +203,13 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
                             ?.sort((a: any, b: any) => a.order_index - b.order_index)
                             .map((lesson: any) => {
                               const isComingSoon = lesson.is_published === false
-                              return (
+                              const isFreeAndPublished = !isComingSoon && lesson.is_free
+
+                              const lessonContent = (
                                 <div
-                                  key={lesson.id}
                                   className={`flex items-center justify-between rounded-lg border p-3 ${
                                     isComingSoon ? "bg-muted/50 opacity-70" : ""
-                                  }`}
+                                  } ${isFreeAndPublished ? "hover:bg-muted/50 transition-colors cursor-pointer" : ""}`}
                                 >
                                   <div className="flex items-center gap-3">
                                     {isComingSoon ? (
@@ -238,6 +239,14 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
                                     {!isComingSoon && lesson.is_free && <Badge variant="secondary">무료</Badge>}
                                   </div>
                                 </div>
+                              )
+
+                              return isFreeAndPublished ? (
+                                <Link key={lesson.id} href={`/course/${slug}/learn/${lesson.id}`}>
+                                  {lessonContent}
+                                </Link>
+                              ) : (
+                                <div key={lesson.id}>{lessonContent}</div>
                               )
                             })}
                         </div>

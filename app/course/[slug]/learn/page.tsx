@@ -5,15 +5,6 @@ export default async function CourseLearnPage({ params }: { params: Promise<{ sl
   const { slug } = await params
   const supabase = await createClient()
 
-  // Get current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/auth/login")
-  }
-
   // Fetch course
   const { data: course } = await supabase.from("courses").select("*").eq("slug", slug).single()
 
@@ -21,31 +12,54 @@ export default async function CourseLearnPage({ params }: { params: Promise<{ sl
     redirect("/course")
   }
 
-  // Check if user has purchased
-  const { data: purchase } = await supabase
-    .from("course_purchases")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("course_id", course.id)
-    .eq("status", "completed")
-    .single()
+  // Get current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  if (!purchase) {
-    redirect(`/course/${slug}`)
+  // Check if user has purchased
+  let hasPurchased = false
+  if (user) {
+    const { data: purchase } = await supabase
+      .from("course_purchases")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("course_id", course.id)
+      .eq("status", "completed")
+      .single()
+
+    hasPurchased = !!purchase
   }
 
-  // Get first lesson
-  const { data: firstSection } = await supabase
+  // Get all sections with lessons
+  const { data: sections } = await supabase
     .from("course_sections")
     .select("*, lessons:course_lessons(*)")
     .eq("course_id", course.id)
     .order("order_index")
-    .limit(1)
-    .single()
 
-  if (firstSection && firstSection.lessons && firstSection.lessons.length > 0) {
-    redirect(`/course/${slug}/learn/${firstSection.lessons[0].id}`)
+  // Flatten all published lessons in order
+  const allLessons: any[] = []
+  sections?.forEach((section) => {
+    section.lessons
+      ?.sort((a: any, b: any) => a.order_index - b.order_index)
+      .filter((l: any) => l.is_published !== false)
+      .forEach((l: any) => allLessons.push(l))
+  })
+
+  if (hasPurchased) {
+    // Purchased user → first lesson (existing behavior)
+    if (allLessons.length > 0) {
+      redirect(`/course/${slug}/learn/${allLessons[0].id}`)
+    }
+  } else {
+    // Non-purchased / non-logged-in → first free lesson
+    const firstFreeLesson = allLessons.find((l) => l.is_free)
+    if (firstFreeLesson) {
+      redirect(`/course/${slug}/learn/${firstFreeLesson.id}`)
+    }
   }
 
+  // Fallback: no lessons or no free lessons → course detail page
   redirect(`/course/${slug}`)
 }

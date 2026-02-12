@@ -21,6 +21,8 @@ import {
   List,
   Home,
   Clock,
+  Lock,
+  ShoppingCart,
 } from "lucide-react"
 import { AttachmentList } from "./file-upload"
 import { LessonComments } from "./lesson-comments"
@@ -29,11 +31,12 @@ interface CoursePlayerProps {
   course: any
   currentLesson: any
   sections: any[]
-  userId: string
+  userId: string | null
+  hasPurchased: boolean
   initialProgress: any
 }
 
-export function CoursePlayer({ course, currentLesson, sections, userId, initialProgress }: CoursePlayerProps) {
+export function CoursePlayer({ course, currentLesson, sections, userId, hasPurchased, initialProgress }: CoursePlayerProps) {
   const [showSidebar, setShowSidebar] = useState(true)
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false)
   const [isCompleted, setIsCompleted] = useState(initialProgress?.is_completed || false)
@@ -42,8 +45,10 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
   const router = useRouter()
   const supabase = createClient()
 
-  // Fetch all lesson progress
+  // Fetch all lesson progress (only if logged in)
   useEffect(() => {
+    if (!userId) return
+
     const fetchProgress = async () => {
       const { data } = await supabase
         .from("lesson_progress")
@@ -65,7 +70,7 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
     sections.forEach((section) => {
       section.lessons
         ?.sort((a: any, b: any) => a.order_index - b.order_index)
-        .filter((lesson: any) => lesson.is_published !== false) // 공개된 레슨만
+        .filter((lesson: any) => lesson.is_published !== false)
         .forEach((lesson: any) => {
           lessons.push({ ...lesson, sectionTitle: section.title })
         })
@@ -76,6 +81,9 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
   const currentIndex = allLessons.findIndex((l) => l.id === currentLesson.id)
   const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null
   const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null
+
+  // Check if next lesson is accessible (free or purchased)
+  const isNextLessonAccessible = nextLesson ? (nextLesson.is_free || hasPurchased) : false
 
   // Calculate progress based on watch time ratio for each lesson
   const totalLessons = allLessons.length
@@ -93,21 +101,19 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
       const isLessonCompleted = completedLessons.has(lesson.id) || (lesson.id === currentLesson.id && isCompleted)
 
       if (isLessonCompleted) {
-        // Completed lesson = 100%
         totalProgress += 100
       } else if (progress && lesson.video_duration && lesson.video_duration > 0) {
-        // Calculate based on watch time ratio (capped at 100%)
         const watchPercent = Math.min((progress.watchTime / lesson.video_duration) * 100, 100)
         totalProgress += watchPercent
       }
-      // Lessons without video_duration or progress count as 0%
     }
 
     return Math.round(totalProgress / totalLessons)
   }, [allLessons, lessonProgress, completedLessons, currentLesson.id, isCompleted, totalLessons])
 
   const handleTimeUpdate = async (currentTime: number) => {
-    // Update watch time every 10 seconds
+    if (!userId) return
+
     if (Math.floor(currentTime) % 10 === 0) {
       const watchTime = Math.floor(currentTime)
 
@@ -122,7 +128,6 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
         })
         .select()
 
-      // Update local state for real-time progress display
       setLessonProgress(prev => {
         const next = new Map(prev)
         const existing = next.get(currentLesson.id)
@@ -130,7 +135,6 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
         return next
       })
 
-      // Auto-complete if watched 90% or more
       if (!isCompleted && currentLesson.video_duration) {
         const watchedPercent = (currentTime / currentLesson.video_duration) * 100
         if (watchedPercent >= 90) {
@@ -141,6 +145,8 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
   }
 
   const handleMarkComplete = async () => {
+    if (!userId) return
+
     await supabase
       .from("lesson_progress")
       .upsert({
@@ -157,16 +163,21 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
   }
 
   const handleVideoEnded = async () => {
-    await handleMarkComplete()
-    // Auto-navigate to next lesson after a short delay
-    if (nextLesson) {
+    if (userId) {
+      await handleMarkComplete()
+    }
+    // Auto-navigate to next lesson only if accessible
+    if (nextLesson && isNextLessonAccessible) {
       setTimeout(() => {
         router.push(`/course/${course.slug}/learn/${nextLesson.id}`)
       }, 1500)
     }
   }
 
-  const navigateToLesson = (lessonId: string) => {
+  const navigateToLesson = (lessonId: string, isFree: boolean) => {
+    // Block navigation to paid lessons for non-purchasers
+    if (!isFree && !hasPurchased) return
+
     setMobileSheetOpen(false)
     router.push(`/course/${course.slug}/learn/${lessonId}`)
   }
@@ -174,18 +185,27 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
   const LessonList = () => (
     <div className="space-y-4">
       {/* Progress */}
-      <div className="px-4 py-3 bg-muted/50 rounded-lg">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium">진행률</span>
-          <span className="text-sm text-muted-foreground">{completedCount}/{totalLessons} 완료</span>
+      {hasPurchased ? (
+        <div className="px-4 py-3 bg-muted/50 rounded-lg">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium">진행률</span>
+            <span className="text-sm text-muted-foreground">{completedCount}/{totalLessons} 완료</span>
+          </div>
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
+            <div
+              className="h-full bg-primary transition-all duration-300"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
         </div>
-        <div className="h-2 bg-muted rounded-full overflow-hidden">
-          <div
-            className="h-full bg-primary transition-all duration-300"
-            style={{ width: `${progressPercent}%` }}
-          />
+      ) : (
+        <div className="px-4 py-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-lg">
+          <p className="text-sm font-medium text-blue-700 dark:text-blue-300">무료 체험 중</p>
+          <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+            무료 강의를 시청하고 있습니다
+          </p>
         </div>
-      </div>
+      )}
 
       {/* Sections & Lessons */}
       {sections.map((section) => (
@@ -198,6 +218,7 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
                 const isActive = lesson.id === currentLesson.id
                 const isLessonCompleted = completedLessons.has(lesson.id) || (isActive && isCompleted)
                 const isComingSoon = lesson.is_published === false
+                const isLocked = !lesson.is_free && !hasPurchased
 
                 // 공개 예정 레슨은 클릭 불가
                 if (isComingSoon) {
@@ -223,10 +244,36 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
                   )
                 }
 
+                // 유료 레슨 + 미구매 → 잠금 표시
+                if (isLocked) {
+                  return (
+                    <div
+                      key={lesson.id}
+                      className="w-full text-left rounded-lg p-3 opacity-60 cursor-not-allowed"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5 flex-shrink-0">
+                          <Lock className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate text-muted-foreground">
+                            {lesson.title}
+                          </p>
+                          {lesson.video_duration && (
+                            <p className="text-xs text-muted-foreground">
+                              {Math.floor(lesson.video_duration / 60)}분 {lesson.video_duration % 60}초
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
+
                 return (
                   <button
                     key={lesson.id}
-                    onClick={() => navigateToLesson(lesson.id)}
+                    onClick={() => navigateToLesson(lesson.id, lesson.is_free)}
                     className={`w-full text-left rounded-lg p-3 transition-colors ${
                       isActive
                         ? "bg-primary/10 border border-primary/20"
@@ -244,9 +291,14 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium truncate ${isActive ? "text-primary" : ""}`}>
-                          {lesson.title}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className={`text-sm font-medium truncate ${isActive ? "text-primary" : ""}`}>
+                            {lesson.title}
+                          </p>
+                          {lesson.is_free && !hasPurchased && (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 flex-shrink-0">무료</Badge>
+                          )}
+                        </div>
                         {lesson.video_duration && (
                           <p className="text-xs text-muted-foreground">
                             {Math.floor(lesson.video_duration / 60)}분 {lesson.video_duration % 60}초
@@ -261,6 +313,34 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
         </div>
       ))}
     </div>
+  )
+
+  // Purchase CTA card for when next lesson is paid
+  const PurchaseCTA = () => (
+    <Card className="border-primary/20 bg-primary/5">
+      <div className="p-6 text-center space-y-4">
+        <ShoppingCart className="h-10 w-10 mx-auto text-primary" />
+        <div>
+          <p className="font-semibold mb-1">전체 강의를 수강하시려면</p>
+          <p className="text-sm text-muted-foreground">강의를 구매해주세요</p>
+        </div>
+        <p className="text-2xl font-bold text-primary">₩{course.price.toLocaleString()}</p>
+        {userId ? (
+          <Button className="w-full" asChild>
+            <Link href={`/course/${course.slug}/purchase`}>
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              구매하기
+            </Link>
+          </Button>
+        ) : (
+          <Button className="w-full" asChild>
+            <Link href={`/auth/login?redirect=/course/${course.slug}/purchase`}>
+              로그인 후 구매
+            </Link>
+          </Button>
+        )}
+      </div>
+    </Card>
   )
 
   return (
@@ -280,10 +360,16 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Progress badge */}
-          <Badge variant="secondary" className="hidden sm:flex">
-            {progressPercent}% 완료
-          </Badge>
+          {/* Progress or preview badge */}
+          {hasPurchased ? (
+            <Badge variant="secondary" className="hidden sm:flex">
+              {progressPercent}% 완료
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="hidden sm:flex border-blue-300 text-blue-600 dark:border-blue-700 dark:text-blue-400">
+              무료 체험 중
+            </Badge>
+          )}
 
           {/* Desktop sidebar toggle */}
           <Button
@@ -363,38 +449,48 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
                 </div>
               )}
 
-              {/* Actions */}
-              <div className="flex flex-wrap items-center gap-3 mb-8">
-                {!isCompleted && (
-                  <Button onClick={handleMarkComplete}>
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    완료로 표시
-                  </Button>
-                )}
-              </div>
+              {/* Actions (only for logged-in users with purchased access) */}
+              {userId && hasPurchased && (
+                <div className="flex flex-wrap items-center gap-3 mb-8">
+                  {!isCompleted && (
+                    <Button onClick={handleMarkComplete}>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      완료로 표시
+                    </Button>
+                  )}
+                </div>
+              )}
 
               {/* Navigation */}
               <div className="flex items-center justify-between border-t pt-6">
                 {prevLesson ? (
-                  <Button variant="outline" asChild>
-                    <Link href={`/course/${course.slug}/learn/${prevLesson.id}`}>
-                      <ChevronLeft className="h-4 w-4 mr-2" />
-                      <span className="hidden sm:inline">이전: </span>
-                      <span className="truncate max-w-[120px] sm:max-w-[200px]">{prevLesson.title}</span>
-                    </Link>
-                  </Button>
+                  prevLesson.is_free || hasPurchased ? (
+                    <Button variant="outline" asChild>
+                      <Link href={`/course/${course.slug}/learn/${prevLesson.id}`}>
+                        <ChevronLeft className="h-4 w-4 mr-2" />
+                        <span className="hidden sm:inline">이전: </span>
+                        <span className="truncate max-w-[120px] sm:max-w-[200px]">{prevLesson.title}</span>
+                      </Link>
+                    </Button>
+                  ) : (
+                    <div />
+                  )
                 ) : (
                   <div />
                 )}
 
                 {nextLesson ? (
-                  <Button asChild>
-                    <Link href={`/course/${course.slug}/learn/${nextLesson.id}`}>
-                      <span className="hidden sm:inline">다음: </span>
-                      <span className="truncate max-w-[120px] sm:max-w-[200px]">{nextLesson.title}</span>
-                      <ChevronRight className="h-4 w-4 ml-2" />
-                    </Link>
-                  </Button>
+                  isNextLessonAccessible ? (
+                    <Button asChild>
+                      <Link href={`/course/${course.slug}/learn/${nextLesson.id}`}>
+                        <span className="hidden sm:inline">다음: </span>
+                        <span className="truncate max-w-[120px] sm:max-w-[200px]">{nextLesson.title}</span>
+                        <ChevronRight className="h-4 w-4 ml-2" />
+                      </Link>
+                    </Button>
+                  ) : (
+                    <div /> // CTA card will be shown below
+                  )
                 ) : (
                   <Button variant="outline" asChild>
                     <Link href={`/course/${course.slug}`}>
@@ -405,10 +501,19 @@ export function CoursePlayer({ course, currentLesson, sections, userId, initialP
                 )}
               </div>
 
-              {/* Comments Section */}
-              <div className="border-t pt-8 mt-8">
-                <LessonComments lessonId={currentLesson.id} userId={userId} />
-              </div>
+              {/* Purchase CTA when next lesson is paid and not purchased */}
+              {nextLesson && !isNextLessonAccessible && (
+                <div className="mt-8">
+                  <PurchaseCTA />
+                </div>
+              )}
+
+              {/* Comments Section (only for logged-in users) */}
+              {userId && (
+                <div className="border-t pt-8 mt-8">
+                  <LessonComments lessonId={currentLesson.id} userId={userId} />
+                </div>
+              )}
             </div>
           </div>
         </div>
