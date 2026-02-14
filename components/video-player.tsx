@@ -207,7 +207,7 @@ function YouTubePlayer({
   }, [videoId, initialTime, onTimeUpdate, onEnded, onDurationDetected])
 
   return (
-    <div ref={containerRef} className="relative w-full h-full bg-black">
+    <div ref={containerRef} className="relative w-full h-full bg-black [&_iframe]:w-full [&_iframe]:h-full">
       {!isReady && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
