@@ -100,8 +100,14 @@ export function CreatePostForm({ categories, userId }: CreatePostFormProps) {
       .replace(/```([\s\S]*?)```/g, "<pre><code>$1</code></pre>")
       // Inline code
       .replace(/`(.*?)`/g, "<code class='inline-code'>$1</code>")
-      // Links
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-primary underline" target="_blank" rel="noopener">$1</a>')
+      // Links (block javascript: and data: URLs)
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => {
+        const trimmed = url.trim().toLowerCase()
+        if (trimmed.startsWith("javascript:") || trimmed.startsWith("data:") || trimmed.startsWith("vbscript:")) {
+          return text
+        }
+        return `<a href="${url}" class="text-primary underline" target="_blank" rel="noopener">${text}</a>`
+      })
       // Line breaks
       .replace(/\n/g, "<br>")
 

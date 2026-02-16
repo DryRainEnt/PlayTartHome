@@ -166,7 +166,7 @@ export default async function ProductPage({
           type="newsletter"
           userEmail={user?.email}
           subscriberCount={0}
-          hasContent={products && products.length > 0}
+          hasContent={!!(products && products.length > 0)}
         />
       </div>
 

@@ -341,7 +341,7 @@ export default async function AdminDashboard() {
                     <div className="min-w-0 flex-1">
                       <p className="font-medium truncate">{post.title}</p>
                       <p className="text-sm text-muted-foreground">
-                        {post.author?.full_name || "익명"}
+                        {(post.author as any)?.full_name || "익명"}
                       </p>
                     </div>
                     <p className="text-xs text-muted-foreground ml-2">

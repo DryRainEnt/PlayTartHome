@@ -112,7 +112,7 @@ export function ProductPurchaseForm({ product, user, profile }: ProductPurchaseF
     renderWidgets()
   }, [widgets, isFreeProduct])
 
-  // 무료 제품 받기
+  // 무료 제품 받기 (서버사이드 검증)
   const handleFreePurchase = async () => {
     if (!agreeTerms || !agreeRefund) {
       setError("이용약관과 환불정책에 동의해주세요")
@@ -123,24 +123,22 @@ export function ProductPurchaseForm({ product, user, profile }: ProductPurchaseF
     setError(null)
 
     try {
-      const { error: insertError } = await supabase
-        .from("product_purchases")
-        .insert({
-          user_id: user.id,
-          product_id: product.id,
-          amount_paid: 0,
-          payment_method: "무료",
-          status: "completed",
-          order_id: orderId,
-        })
+      const res = await fetch("/api/payment/free-product", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: product.id, orderId }),
+      })
 
-      if (insertError) throw insertError
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "처리 중 오류가 발생했습니다")
+      }
 
       // 성공 페이지로 이동
       window.location.href = `/product/${product.slug}/purchase/success`
-    } catch (err) {
+    } catch (err: any) {
       console.error("Free purchase error:", err)
-      setError("처리 중 오류가 발생했습니다")
+      setError(err.message || "처리 중 오류가 발생했습니다")
     } finally {
       setIsLoading(false)
     }

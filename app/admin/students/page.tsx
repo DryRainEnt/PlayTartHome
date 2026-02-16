@@ -71,7 +71,7 @@ async function getStudentsData(params: { courseId: string | null; page: number; 
   if (search) {
     const searchLower = search.toLowerCase()
     filteredPurchases = filteredPurchases.filter(
-      (p) =>
+      (p: any) =>
         p.user?.full_name?.toLowerCase().includes(searchLower) ||
         p.user?.email?.toLowerCase().includes(searchLower)
     )
@@ -152,7 +152,7 @@ async function getStudentsData(params: { courseId: string | null; page: number; 
   const avgCompletionRate = completionCount > 0 ? Math.round(totalCompletion / completionCount) : 0
 
   // Format student data
-  const students = paginatedPurchases.map((purchase) => {
+  const students = paginatedPurchases.map((purchase: any) => {
     const key = `${purchase.user_id}-${purchase.course_id}`
     const progress = progressData[key] || { completed: 0, lastWatched: null }
     const totalLessons = lessonCounts[purchase.course_id] || 0

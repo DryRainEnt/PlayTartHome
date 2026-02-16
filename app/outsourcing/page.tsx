@@ -215,7 +215,7 @@ export default async function OutsourcingPage({
           type="new_service"
           userEmail={user?.email}
           subscriberCount={subscriberCount || 0}
-          hasContent={services && services.length > 0}
+          hasContent={!!(services && services.length > 0)}
         />
       </div>
 

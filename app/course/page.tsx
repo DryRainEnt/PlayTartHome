@@ -149,7 +149,7 @@ export default async function CoursePage({
           type="new_course"
           userEmail={user?.email}
           subscriberCount={subscriberCount || 0}
-          hasContent={courses && courses.length > 0}
+          hasContent={!!(courses && courses.length > 0)}
         />
       </div>
 

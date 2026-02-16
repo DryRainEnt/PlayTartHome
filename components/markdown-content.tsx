@@ -24,8 +24,14 @@ export function MarkdownContent({ content, className = "" }: MarkdownContentProp
       .replace(/```([\s\S]*?)```/g, "<pre class='bg-muted p-4 rounded-md overflow-x-auto my-4'><code>$1</code></pre>")
       // Inline code
       .replace(/`(.*?)`/g, "<code class='bg-muted px-1.5 py-0.5 rounded text-sm'>$1</code>")
-      // Links
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-primary underline hover:no-underline" target="_blank" rel="noopener noreferrer">$1</a>')
+      // Links (block javascript: and data: URLs)
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => {
+        const trimmed = url.trim().toLowerCase()
+        if (trimmed.startsWith("javascript:") || trimmed.startsWith("data:") || trimmed.startsWith("vbscript:")) {
+          return text
+        }
+        return `<a href="${url}" class="text-primary underline hover:no-underline" target="_blank" rel="noopener noreferrer">${text}</a>`
+      })
       // Unordered lists
       .replace(/^\- (.*$)/gm, "<li class='ml-4'>• $1</li>")
       // Ordered lists (basic)

@@ -59,7 +59,7 @@ export default function SignUpPage() {
 
     try {
       const { error } = await supabase.auth.signInWithOAuth({
-        provider,
+        provider: provider as any,
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
         },
