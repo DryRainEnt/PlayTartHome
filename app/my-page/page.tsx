@@ -45,20 +45,23 @@ export default async function MyPagePage() {
   // Calculate progress for each course
   const coursesWithProgress = await Promise.all(
     (purchases || []).map(async (purchase: any) => {
-      // Get total lessons
-      const { count: totalLessons } = await supabase
-        .from("course_lessons")
-        .select("*", { count: "exact", head: true })
-        .eq("course_id", purchase.course_id)
+      try {
+        const { count: totalLessons } = await supabase
+          .from("course_lessons")
+          .select("*", { count: "exact", head: true })
+          .eq("course_id", purchase.course_id)
 
-      // Get completed lessons
-      const completedLessons = progressData?.filter((p) => p.course_id === purchase.course_id && p.is_completed).length
+        const completedLessons = progressData?.filter((p) => p.course_id === purchase.course_id && p.is_completed).length ?? 0
+        const total = totalLessons ?? 0
 
-      return {
-        ...purchase,
-        totalLessons: totalLessons || 0,
-        completedLessons: completedLessons || 0,
-        progressPercentage: totalLessons ? Math.round(((completedLessons || 0) / totalLessons) * 100) : 0,
+        return {
+          ...purchase,
+          totalLessons: total,
+          completedLessons,
+          progressPercentage: total > 0 ? Math.round((completedLessons / total) * 100) : 0,
+        }
+      } catch {
+        return { ...purchase, totalLessons: 0, completedLessons: 0, progressPercentage: 0 }
       }
     }),
   )

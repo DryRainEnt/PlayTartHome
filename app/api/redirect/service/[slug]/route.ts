@@ -36,6 +36,16 @@ export async function GET(
     row_id: service.id,
   })
 
+  // Validate external URL protocol
+  try {
+    const parsed = new URL(service.external_url)
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+      return NextResponse.redirect(new URL(`/outsourcing/${slug}`, request.url))
+    }
+  } catch {
+    return NextResponse.redirect(new URL(`/outsourcing/${slug}`, request.url))
+  }
+
   // Redirect to external URL
   return NextResponse.redirect(service.external_url)
 }

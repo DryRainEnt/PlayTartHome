@@ -41,23 +41,23 @@ async function getLatestYouTubeVideos(count: number = 3) {
   }
 }
 
-// 포트폴리오 이미지 - 6열 그리드 (정사각형=2칸, 가로형=3칸)
+// 포트폴리오 이미지 - 반응형 그리드 (모바일2열, 태블릿4열, 데스크탑6열)
 const portfolioImages = [
-  // Row 1: 가로형 2개 (3+3=6) - Eris, May가 가로형
-  { src: "/portfolio/ErisAction004x1.gif", alt: "Eris", span: "col-span-3" },
-  { src: "/portfolio/May_6H.gif", alt: "May", span: "col-span-3" },
-  // Row 2: 정사각형 3개 (2+2+2=6)
-  { src: "/portfolio/Knight_n04.gif", alt: "Knight", span: "col-span-2" },
-  { src: "/portfolio/Godette.gif", alt: "Godette", span: "col-span-2" },
-  { src: "/portfolio/Hunter.gif", alt: "Hunter", span: "col-span-2" },
-  // Row 3: 정사각형 3개 (2+2+2=6)
-  { src: "/portfolio/Silent_donation.gif", alt: "Silent Donation", span: "col-span-2" },
-  { src: "/portfolio/MarcilleYADA_Loop.gif", alt: "Marcille", span: "col-span-2" },
-  { src: "/portfolio/pkmOCx2.gif", alt: "Trainer", span: "col-span-2" },
-  // Row 4: 정사각형 3개 (2+2+2=6)
-  { src: "/portfolio/BocchiStage.gif", alt: "Bocchi Stage", span: "col-span-2" },
-  { src: "/portfolio/230809~Johnny.gif", alt: "Johnny", span: "col-span-2" },
-  { src: "/portfolio/Sol_Idle.gif", alt: "Sol", span: "col-span-2" },
+  // Row 1: 가로형 2개 - Eris, May
+  { src: "/portfolio/ErisAction004x1.gif", alt: "Eris", span: "col-span-2 lg:col-span-3" },
+  { src: "/portfolio/May_6H.gif", alt: "May", span: "col-span-2 lg:col-span-3" },
+  // Row 2: 정사각형 3개
+  { src: "/portfolio/Knight_n04.gif", alt: "Knight", span: "col-span-1 sm:col-span-2" },
+  { src: "/portfolio/Godette.gif", alt: "Godette", span: "col-span-1 sm:col-span-2" },
+  { src: "/portfolio/Hunter.gif", alt: "Hunter", span: "col-span-1 sm:col-span-2" },
+  // Row 3: 정사각형 3개
+  { src: "/portfolio/Silent_donation.gif", alt: "Silent Donation", span: "col-span-1 sm:col-span-2" },
+  { src: "/portfolio/MarcilleYADA_Loop.gif", alt: "Marcille", span: "col-span-1 sm:col-span-2" },
+  { src: "/portfolio/pkmOCx2.gif", alt: "Trainer", span: "col-span-1 sm:col-span-2" },
+  // Row 4: 정사각형 3개
+  { src: "/portfolio/BocchiStage.gif", alt: "Bocchi Stage", span: "col-span-1 sm:col-span-2" },
+  { src: "/portfolio/230809~Johnny.gif", alt: "Johnny", span: "col-span-1 sm:col-span-2" },
+  { src: "/portfolio/Sol_Idle.gif", alt: "Sol", span: "col-span-1 sm:col-span-2" },
 ]
 
 // 피쳐드 콘텐츠
@@ -158,7 +158,7 @@ export default async function HomePage() {
 
           {/* 콜라주 그리드 - 6열 큼직한 배치 */}
           <div
-            className="max-w-6xl mx-auto grid grid-cols-6 gap-1"
+            className="max-w-6xl mx-auto grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-1"
             style={{ gridAutoRows: "200px" }}
           >
             {portfolioImages.map((image, index) => (
@@ -181,7 +181,7 @@ export default async function HomePage() {
                 href={`https://www.youtube.com/watch?v=${video.videoId}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="col-span-2 relative flex items-center justify-center bg-muted/20 overflow-hidden group cursor-pointer"
+                className="col-span-1 sm:col-span-2 relative flex items-center justify-center bg-muted/20 overflow-hidden group cursor-pointer"
               >
                 <img
                   src={`https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`}

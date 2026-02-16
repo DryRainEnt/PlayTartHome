@@ -27,19 +27,18 @@ async function getDashboardData() {
   const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
 
   // 기본 카운트
-  const [
-    { count: coursesCount },
-    { count: servicesCount },
-    { count: productsCount },
-    { count: usersCount },
-    { count: postsCount },
-  ] = await Promise.all([
+  const [coursesRes, servicesRes, productsRes, usersRes, postsRes] = await Promise.all([
     supabase.from("courses").select("*", { count: "exact", head: true }),
     supabase.from("services").select("*", { count: "exact", head: true }),
     supabase.from("products").select("*", { count: "exact", head: true }),
     supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase.from("forum_posts").select("*", { count: "exact", head: true }),
   ])
+  const coursesCount = coursesRes.count ?? 0
+  const servicesCount = servicesRes.count ?? 0
+  const productsCount = productsRes.count ?? 0
+  const usersCount = usersRes.count ?? 0
+  const postsCount = postsRes.count ?? 0
 
   // 이번 달 매출
   const { data: thisMonthCourses } = await supabase
@@ -78,24 +77,20 @@ async function getDashboardData() {
     (lastMonthProducts?.reduce((sum, p) => sum + (p.amount_paid || 0), 0) || 0)
 
   // 기간별 신규 가입
-  const [
-    { count: todaySignups },
-    { count: weekSignups },
-    { count: monthSignups },
-  ] = await Promise.all([
+  const [todaySignupsRes, weekSignupsRes, monthSignupsRes] = await Promise.all([
     supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", todayStart.toISOString()),
     supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", weekStart.toISOString()),
     supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", monthStart.toISOString()),
   ])
+  const todaySignups = todaySignupsRes.count ?? 0
+  const weekSignups = weekSignupsRes.count ?? 0
+  const monthSignups = monthSignupsRes.count ?? 0
 
   // 기간별 주문 수
   const [
-    { count: todayCourseOrders },
-    { count: todayProductOrders },
-    { count: weekCourseOrders },
-    { count: weekProductOrders },
-    { count: monthCourseOrders },
-    { count: monthProductOrders },
+    todayCourseOrdersRes, todayProductOrdersRes,
+    weekCourseOrdersRes, weekProductOrdersRes,
+    monthCourseOrdersRes, monthProductOrdersRes,
   ] = await Promise.all([
     supabase.from("course_purchases").select("*", { count: "exact", head: true }).eq("status", "completed").gte("purchased_at", todayStart.toISOString()),
     supabase.from("product_purchases").select("*", { count: "exact", head: true }).eq("status", "completed").gte("created_at", todayStart.toISOString()),
@@ -104,6 +99,12 @@ async function getDashboardData() {
     supabase.from("course_purchases").select("*", { count: "exact", head: true }).eq("status", "completed").gte("purchased_at", monthStart.toISOString()),
     supabase.from("product_purchases").select("*", { count: "exact", head: true }).eq("status", "completed").gte("created_at", monthStart.toISOString()),
   ])
+  const todayCourseOrders = todayCourseOrdersRes.count ?? 0
+  const todayProductOrders = todayProductOrdersRes.count ?? 0
+  const weekCourseOrders = weekCourseOrdersRes.count ?? 0
+  const weekProductOrders = weekProductOrdersRes.count ?? 0
+  const monthCourseOrders = monthCourseOrdersRes.count ?? 0
+  const monthProductOrders = monthProductOrdersRes.count ?? 0
 
   // 최근 가입자 3명
   const { data: recentUsers } = await supabase
@@ -121,11 +122,11 @@ async function getDashboardData() {
 
   return {
     counts: {
-      courses: coursesCount || 0,
-      services: servicesCount || 0,
-      products: productsCount || 0,
-      users: usersCount || 0,
-      posts: postsCount || 0,
+      courses: coursesCount,
+      services: servicesCount,
+      products: productsCount,
+      users: usersCount,
+      posts: postsCount,
     },
     revenue: {
       thisMonth: thisMonthRevenue,
@@ -135,14 +136,14 @@ async function getDashboardData() {
         : thisMonthRevenue > 0 ? 100 : 0,
     },
     signups: {
-      today: todaySignups || 0,
-      week: weekSignups || 0,
-      month: monthSignups || 0,
+      today: todaySignups,
+      week: weekSignups,
+      month: monthSignups,
     },
     orders: {
-      today: (todayCourseOrders || 0) + (todayProductOrders || 0),
-      week: (weekCourseOrders || 0) + (weekProductOrders || 0),
-      month: (monthCourseOrders || 0) + (monthProductOrders || 0),
+      today: todayCourseOrders + todayProductOrders,
+      week: weekCourseOrders + weekProductOrders,
+      month: monthCourseOrders + monthProductOrders,
     },
     recentUsers: recentUsers || [],
     recentPosts: recentPosts || [],

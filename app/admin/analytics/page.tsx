@@ -22,12 +22,19 @@ export default async function AnalyticsPage({
   const resolvedParams = await searchParams
   const days = Math.min(Math.max(parseInt(resolvedParams.days || "14", 10), 7), 90)
 
+  const defaultKPI = {
+    todayVisitors: 0, yesterdayVisitors: 0, visitorChange: 0,
+    todaySignups: 0, yesterdaySignups: 0, signupChange: 0,
+    totalUsers: 0, totalPageViews: 0,
+  }
+  const defaultActiveUsers = { activeUsers: 0, activeRate: 0, newUsers: 0, totalUsers: 0 }
+
   const [kpi, dailyTrend, topContent, activeUsers, resourceViews] = await Promise.all([
-    getKPIStats(),
-    getDailyTrend(days),
-    getTopViewedContent(10),
-    getActiveUsers(7),
-    getViewsByResourceType(),
+    getKPIStats().catch(() => defaultKPI),
+    getDailyTrend(days).catch(() => []),
+    getTopViewedContent(10).catch(() => []),
+    getActiveUsers(7).catch(() => defaultActiveUsers),
+    getViewsByResourceType().catch(() => []),
   ])
 
   return (
