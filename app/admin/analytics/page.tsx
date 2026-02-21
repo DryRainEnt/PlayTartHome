@@ -17,10 +17,27 @@ import { ResourceTraffic } from "./components/resource-traffic"
 export default async function AnalyticsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ days?: string }>
+  searchParams: Promise<{ days?: string; from?: string; to?: string }>
 }) {
   const resolvedParams = await searchParams
-  const days = Math.min(Math.max(parseInt(resolvedParams.days || "14", 10), 7), 90)
+
+  // from/to가 있으면 커스텀 범위, 아니면 days 프리셋
+  const fromParam = resolvedParams.from
+  const toParam = resolvedParams.to
+  const hasCustomRange = !!(fromParam && toParam)
+
+  let days: number
+  let fromDate: string | undefined
+  let toDate: string | undefined
+
+  if (hasCustomRange) {
+    fromDate = fromParam
+    toDate = toParam
+    const diffMs = new Date(toParam).getTime() - new Date(fromParam).getTime()
+    days = Math.max(Math.ceil(diffMs / (1000 * 60 * 60 * 24)) + 1, 1)
+  } else {
+    days = Math.min(Math.max(parseInt(resolvedParams.days || "14", 10), 7), 90)
+  }
 
   const defaultKPI = {
     todayVisitors: 0, yesterdayVisitors: 0, visitorChange: 0,
@@ -31,9 +48,9 @@ export default async function AnalyticsPage({
 
   const [kpi, dailyTrend, topContent, activeUsers, resourceViews] = await Promise.all([
     getKPIStats().catch(() => defaultKPI),
-    getDailyTrend(days).catch(() => []),
+    getDailyTrend(days, fromDate, toDate).catch(() => []),
     getTopViewedContent(10).catch(() => []),
-    getActiveUsers(7).catch(() => defaultActiveUsers),
+    getActiveUsers(7, fromDate, toDate).catch(() => defaultActiveUsers),
     getViewsByResourceType().catch(() => []),
   ])
 
@@ -133,7 +150,11 @@ export default async function AnalyticsPage({
         <Card className="lg:col-span-4">
           <CardHeader>
             <CardTitle>방문자 추이</CardTitle>
-            <CardDescription>최근 {days}일 방문자 및 페이지뷰</CardDescription>
+            <CardDescription>
+              {hasCustomRange
+                ? `${fromDate?.replace(/-/g, ".")} ~ ${toDate?.replace(/-/g, ".")} 방문자 및 페이지뷰`
+                : `최근 ${days}일 방문자 및 페이지뷰`}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <VisitorChart data={dailyTrend} />

@@ -26,12 +26,14 @@ export async function GET(request: NextRequest) {
     const resourceType = searchParams.get("type")
     const resourceSlug = searchParams.get("slug")
     const days = parseInt(searchParams.get("days") || "14", 10)
+    const from = searchParams.get("from") || undefined
+    const to = searchParams.get("to") || undefined
 
     if (!resourceType || !resourceSlug) {
       return NextResponse.json({ error: "type과 slug 파라미터가 필요합니다" }, { status: 400 })
     }
 
-    const trend = await getResourceTrend(resourceType, resourceSlug, Math.min(days, 90))
+    const trend = await getResourceTrend(resourceType, resourceSlug, Math.min(days, 90), from, to)
 
     return NextResponse.json({ trend })
   } catch (error) {

@@ -87,13 +87,30 @@ export async function getKPIStats() {
 }
 
 // 일별 트렌드 데이터
-export async function getDailyTrend(days: number = 14) {
+export async function getDailyTrend(days: number = 14, from?: string, to?: string) {
   const supabase = await createClient()
   const results: { date: string; visitors: number; pageViews: number; signups: number }[] = []
 
-  for (let i = days - 1; i >= 0; i--) {
-    const date = new Date()
-    date.setDate(date.getDate() - i)
+  // from/to가 있으면 해당 범위, 없으면 오늘 기준 days일 전부터
+  let startDate: Date
+  let totalDays: number
+
+  if (from && to) {
+    startDate = new Date(from)
+    startDate.setHours(0, 0, 0, 0)
+    const endDate = new Date(to)
+    endDate.setHours(0, 0, 0, 0)
+    totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+  } else {
+    totalDays = days
+    startDate = new Date()
+    startDate.setDate(startDate.getDate() - (days - 1))
+    startDate.setHours(0, 0, 0, 0)
+  }
+
+  for (let i = 0; i < totalDays; i++) {
+    const date = new Date(startDate)
+    date.setDate(date.getDate() + i)
     date.setHours(0, 0, 0, 0)
 
     const nextDate = new Date(date)
@@ -186,10 +203,17 @@ export async function getTopViewedContent(limit: number = 10) {
 }
 
 // 활성 사용자 분석
-export async function getActiveUsers(days: number = 7) {
+export async function getActiveUsers(days: number = 7, from?: string, to?: string) {
   const supabase = await createClient()
-  const startDate = new Date()
-  startDate.setDate(startDate.getDate() - days)
+  let startDate: Date
+
+  if (from) {
+    startDate = new Date(from)
+    startDate.setHours(0, 0, 0, 0)
+  } else {
+    startDate = new Date()
+    startDate.setDate(startDate.getDate() - days)
+  }
 
   // 활동 있는 사용자
   const { data: activeData } = await supabase
@@ -339,14 +363,32 @@ export async function getResourceList(resourceType: string) {
 export async function getResourceTrend(
   resourceType: string,
   resourceSlug: string,
-  days: number = 14
+  days: number = 14,
+  from?: string,
+  to?: string
 ): Promise<{ date: string; views: number }[]> {
   const supabase = await createClient()
   const results: { date: string; views: number }[] = []
 
-  for (let i = days - 1; i >= 0; i--) {
-    const date = new Date()
-    date.setDate(date.getDate() - i)
+  let startDate: Date
+  let totalDays: number
+
+  if (from && to) {
+    startDate = new Date(from)
+    startDate.setHours(0, 0, 0, 0)
+    const endDate = new Date(to)
+    endDate.setHours(0, 0, 0, 0)
+    totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+  } else {
+    totalDays = days
+    startDate = new Date()
+    startDate.setDate(startDate.getDate() - (days - 1))
+    startDate.setHours(0, 0, 0, 0)
+  }
+
+  for (let i = 0; i < totalDays; i++) {
+    const date = new Date(startDate)
+    date.setDate(date.getDate() + i)
     date.setHours(0, 0, 0, 0)
 
     const nextDate = new Date(date)
