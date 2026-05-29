@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useRef } from "react"
+import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "./ui/button"
-import { Upload, X, Loader2, FileIcon, Download } from "lucide-react"
+import { Upload, X, Loader2, FileIcon, Download, LogIn } from "lucide-react"
 
 interface Attachment {
   name: string
@@ -194,13 +195,20 @@ export function FileUpload({
 interface AttachmentListProps {
   attachments: Attachment[]
   courseId: string
+  isLoggedIn: boolean
 }
 
-export function AttachmentList({ attachments, courseId }: AttachmentListProps) {
+export function AttachmentList({ attachments, courseId, isLoggedIn }: AttachmentListProps) {
   const [downloading, setDownloading] = useState<string | null>(null)
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
   const supabase = createClient()
 
   const handleDownload = async (attachment: Attachment) => {
+    if (!isLoggedIn) {
+      setShowLoginPrompt(true)
+      return
+    }
+
     setDownloading(attachment.url)
 
     try {
@@ -262,6 +270,18 @@ export function AttachmentList({ attachments, courseId }: AttachmentListProps) {
           </button>
         ))}
       </div>
+
+      {showLoginPrompt && (
+        <div className="flex items-center justify-between gap-3 p-3 rounded-lg border border-primary/30 bg-primary/5">
+          <p className="text-sm">로그인하면 무료로 받을 수 있어요</p>
+          <Button asChild size="sm" className="flex-shrink-0">
+            <Link href="/auth/login">
+              <LogIn className="h-4 w-4 mr-1" />
+              로그인
+            </Link>
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

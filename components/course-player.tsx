@@ -445,6 +445,7 @@ export function CoursePlayer({ course, currentLesson, sections, userId, hasPurch
                   <AttachmentList
                     attachments={currentLesson.attachments}
                     courseId={course.id}
+                    isLoggedIn={!!userId}
                   />
                 </div>
               )}
