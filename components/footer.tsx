@@ -7,20 +7,20 @@ export function Footer() {
         <div className="grid gap-8 md:grid-cols-4">
           <div>
             <h3 className="mb-4 text-lg font-bold">Playtart</h3>
-            <p className="text-sm text-muted-foreground">크리에이티브 전문가를 위한 온라인 학습 플랫폼</p>
+            <p className="text-sm text-muted-foreground">인디게임 스튜디오</p>
           </div>
 
           <div>
-            <h4 className="mb-4 font-semibold">서비스</h4>
+            <h4 className="mb-4 font-semibold">바로가기</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/course" className="text-muted-foreground hover:text-primary">
-                  강의
+                <Link href="/games" className="text-muted-foreground hover:text-primary">
+                  게임
                 </Link>
               </li>
               <li>
-                <Link href="/outsourcing" className="text-muted-foreground hover:text-primary">
-                  외주
+                <Link href="/course" className="text-muted-foreground hover:text-primary">
+                  강의
                 </Link>
               </li>
               <li>

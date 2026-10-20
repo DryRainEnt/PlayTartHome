@@ -15,6 +15,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 1,
     },
     {
+      url: `${BASE_URL}/games`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
       url: `${BASE_URL}/course`,
       lastModified: new Date(),
       changeFrequency: "daily",
@@ -25,12 +31,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 0.9,
-    },
-    {
-      url: `${BASE_URL}/outsourcing`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
     },
     {
       url: `${BASE_URL}/forum`,
@@ -78,19 +78,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }))
 
-  // 외주 서비스 페이지
-  const { data: services } = await supabase
-    .from("services")
-    .select("slug, updated_at")
-    .eq("is_active", true)
-
-  const servicePages: MetadataRoute.Sitemap = (services || []).map((service) => ({
-    url: `${BASE_URL}/outsourcing/${service.slug}`,
-    lastModified: new Date(service.updated_at),
-    changeFrequency: "monthly" as const,
-    priority: 0.7,
-  }))
-
   // 포럼 게시글 (최근 100개)
   const { data: posts } = await supabase
     .from("forum_posts")
@@ -105,5 +92,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }))
 
-  return [...staticPages, ...coursePages, ...productPages, ...servicePages, ...postPages]
+  return [...staticPages, ...coursePages, ...productPages, ...postPages]
 }

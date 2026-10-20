@@ -3,6 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { PageViewTracker } from "@/components/page-view-tracker"
+import { SteamButtons } from "@/components/steam-buttons"
+import { ExternalCourseCard } from "@/components/external-course-card"
+import { games, externalCourses } from "@/lib/site-content"
 
 // YouTube RSS 피드에서 최신 영상 가져오기
 const YOUTUBE_CHANNEL_ID = "UC3foO9bhZJHkeROLdu0m2MQ"
@@ -60,33 +63,9 @@ const portfolioImages = [
   { src: "/portfolio/Sol_Idle.gif", alt: "Sol", span: "col-span-1 sm:col-span-2" },
 ]
 
-// 피쳐드 콘텐츠
-const featuredContent = [
-  {
-    type: "강의",
-    title: "픽셀아트 입문",
-    description: "처음 시작하는 픽셀아트, 기초부터 캐릭터 제작까지",
-    href: "/course",
-    cta: "강의 보러가기",
-  },
-  {
-    type: "외주",
-    title: "게임 리소스 제작",
-    description: "인디 게임에 필요한 캐릭터, 타일셋, UI 제작",
-    href: "/outsourcing",
-    cta: "의뢰하기",
-  },
-  {
-    type: "강의",
-    title: "인디게임 개발",
-    description: "게임 기획부터 출시까지, 1인 개발자를 위한 가이드",
-    href: "/course",
-    cta: "강의 보러가기",
-  },
-]
-
 export default async function HomePage() {
   const supabase = await createClient()
+  const featuredGame = games[0]
 
   // YouTube 최신 영상 가져오기
   const portfolioVideos = await getLatestYouTubeVideos(3)
@@ -97,54 +76,131 @@ export default async function HomePage() {
     .select("*")
     .eq("is_published", true)
     .order("created_at", { ascending: false })
-    .limit(6)
-
-  // Fetch service categories
-  const { data: serviceCategories } = await supabase
-    .from("service_categories")
-    .select("*")
-    .order("created_at", { ascending: false })
     .limit(3)
 
   return (
     <div className="flex flex-col">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary/10 to-background py-16 md:py-24">
+      {/* Hero Section - 대표 게임 */}
+      <section className="dark bg-background text-foreground py-12 md:py-20">
         <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-3xl text-center mb-12">
-            <h1 className="mb-6 text-balance text-4xl font-bold tracking-tight leading-tight md:text-5xl md:leading-snug">
-              픽셀아트 강의 & 외주
-              <br />
-              <span className="text-primary">플레이타르트</span>
-            </h1>
-            <p className="mb-8 text-pretty text-lg text-muted-foreground leading-relaxed">
-              픽셀아트, AI 웹사이트 제작, 창작자 생존 전략까지.
-              <br className="hidden sm:block" />
-              개인 창작자 중심의 미니 플랫폼입니다.
-            </p>
+          <div className="grid items-center gap-8 lg:grid-cols-5 lg:gap-12">
+            <a
+              href={featuredGame.steamUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="lg:col-span-3 overflow-hidden rounded-lg"
+            >
+              <img
+                src={featuredGame.keyArt}
+                alt={featuredGame.titleEn}
+                className="aspect-video w-full object-cover"
+                style={{ imageRendering: "pixelated" }}
+              />
+            </a>
+
+            <div className="lg:col-span-2">
+              <span className="mb-4 inline-block rounded-full bg-primary/20 px-3 py-1 text-xs font-semibold">
+                {featuredGame.status} · 데모 공개 중
+              </span>
+              <h1 className="mb-2 text-4xl font-bold tracking-tight md:text-5xl">{featuredGame.title}</h1>
+              <p className="mb-6 text-sm text-muted-foreground">{featuredGame.titleEn}</p>
+              <p className="mb-2 text-lg font-medium">{featuredGame.tagline}</p>
+              <p className="mb-6 text-muted-foreground leading-relaxed">{featuredGame.description}</p>
+              <div className="mb-8 flex flex-wrap gap-2">
+                {featuredGame.tags.map((tag) => (
+                  <span key={tag} className="rounded-md border px-2 py-1 text-xs text-muted-foreground">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <SteamButtons game={featuredGame} />
+            </div>
           </div>
 
-          {/* Featured Content Cards */}
-          <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
-            {featuredContent.map((item, index) => (
-              <Card key={index} className="relative overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 flex flex-col">
-                <div className="absolute top-3 left-3">
-                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-primary/20 text-foreground">
-                    {item.type}
-                  </span>
-                </div>
-                <CardHeader className="pt-12 flex-1">
-                  <CardTitle className="text-xl">{item.title}</CardTitle>
-                  <CardDescription className="line-clamp-2">{item.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button asChild className="w-full">
-                    <Link href={item.href}>{item.cta}</Link>
-                  </Button>
-                </CardContent>
-              </Card>
+          <div className="mt-10 grid grid-cols-2 gap-2 md:grid-cols-4">
+            {featuredGame.screenshots.slice(0, 4).map((src) => (
+              <img
+                key={src}
+                src={src}
+                alt={`${featuredGame.titleEn} 스크린샷`}
+                className="aspect-video w-full rounded-md object-cover"
+                loading="lazy"
+              />
             ))}
           </div>
+
+          <div className="mt-6 text-center">
+            <Link href="/games" className="text-sm text-muted-foreground hover:text-primary">
+              게임 더 보기 →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Courses */}
+      <section className="py-16">
+        <div className="container mx-auto px-4">
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h2 className="text-3xl font-bold">강의</h2>
+              <p className="mt-2 text-muted-foreground">게임 만들면서 익힌 것들을 가르칩니다</p>
+            </div>
+            <Button variant="outline" asChild>
+              <Link href="/course">전체보기</Link>
+            </Button>
+          </div>
+
+          {courses && courses.length > 0 && (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {courses.map((course) => (
+                <Link key={course.id} href={`/course/${course.slug}`}>
+                  <Card className="h-full transition-shadow hover:shadow-lg">
+                    <div className="aspect-video w-full overflow-hidden rounded-t-lg bg-muted">
+                      {course.thumbnail_url ? (
+                        <img
+                          src={course.thumbnail_url || "/placeholder.svg"}
+                          alt={course.title}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                          강의 이미지
+                        </div>
+                      )}
+                    </div>
+                    <CardHeader>
+                      <CardTitle className="line-clamp-2">{course.title}</CardTitle>
+                      <CardDescription className="line-clamp-2">{course.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">{course.instructor_name}</span>
+                        <div className="text-right">
+                          {course.original_price && course.original_price > course.price && (
+                            <span className="mr-2 text-sm text-muted-foreground line-through">
+                              ₩{course.original_price.toLocaleString()}
+                            </span>
+                          )}
+                          <span className="text-lg font-bold text-primary">₩{course.price?.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {externalCourses.length > 0 && (
+            <div className="mt-10">
+              <h3 className="mb-4 text-lg font-semibold">다른 플랫폼 강의</h3>
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {externalCourses.map((course) => (
+                  <ExternalCourseCard key={course.url} course={course} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -152,7 +208,7 @@ export default async function HomePage() {
       <section className="py-16 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="mb-8 text-center">
-            <h2 className="text-3xl font-bold">포트폴리오</h2>
+            <h2 className="text-3xl font-bold">픽셀아트</h2>
             <p className="mt-2 text-muted-foreground">직접 제작한 픽셀아트 작품들</p>
           </div>
 
@@ -209,134 +265,16 @@ export default async function HomePage() {
           </div>
 
           <div className="mt-8 text-center">
-            <p className="text-sm text-muted-foreground mb-4">
-              게임 캐릭터, 타일셋, UI 등 다양한 픽셀아트 제작이 가능합니다
-            </p>
             <Button variant="outline" asChild>
-              <Link href="/outsourcing">외주 의뢰하기</Link>
+              <a
+                href={`https://www.youtube.com/channel/${YOUTUBE_CHANNEL_ID}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                유튜브 채널
+              </a>
             </Button>
           </div>
-        </div>
-      </section>
-
-      {/* Featured Courses */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h2 className="text-3xl font-bold">강의</h2>
-              <p className="mt-2 text-muted-foreground">픽셀아트와 창작에 필요한 스킬을 배우세요</p>
-            </div>
-            <Button variant="outline" asChild>
-              <Link href="/course">전체보기</Link>
-            </Button>
-          </div>
-
-          {courses && courses.length > 0 ? (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {courses.map((course) => (
-                <Link key={course.id} href={`/course/${course.slug}`}>
-                  <Card className="h-full transition-shadow hover:shadow-lg">
-                    <div className="aspect-video w-full overflow-hidden rounded-t-lg bg-muted">
-                      {course.thumbnail_url ? (
-                        <img
-                          src={course.thumbnail_url || "/placeholder.svg"}
-                          alt={course.title}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                          강의 이미지
-                        </div>
-                      )}
-                    </div>
-                    <CardHeader>
-                      <CardTitle className="line-clamp-2">{course.title}</CardTitle>
-                      <CardDescription className="line-clamp-2">{course.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">{course.instructor_name}</span>
-                        <div className="text-right">
-                          {course.original_price && course.original_price > course.price && (
-                            <span className="mr-2 text-sm text-muted-foreground line-through">
-                              ₩{course.original_price.toLocaleString()}
-                            </span>
-                          )}
-                          <span className="text-lg font-bold text-primary">₩{course.price?.toLocaleString()}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                강의를 준비 중입니다. 곧 만나요!
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </section>
-
-      {/* Services Section */}
-      <section className="bg-muted/50 py-16">
-        <div className="container mx-auto px-4">
-          <div className="mb-8 text-center">
-            <h2 className="text-3xl font-bold">외주 서비스</h2>
-            <p className="mt-2 text-muted-foreground">게임에 필요한 픽셀아트 리소스를 의뢰하세요</p>
-          </div>
-
-          {serviceCategories && serviceCategories.length > 0 ? (
-            <div className="grid gap-6 md:grid-cols-3 max-w-4xl mx-auto">
-              {serviceCategories.map((category) => (
-                <Link key={category.id} href={`/outsourcing?category=${category.slug}`}>
-                  <Card className="h-full text-center transition-all hover:shadow-lg hover:-translate-y-1">
-                    <CardHeader>
-                      <CardTitle className="text-lg">{category.name}</CardTitle>
-                      <CardDescription>{category.description}</CardDescription>
-                    </CardHeader>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <Card className="max-w-md mx-auto">
-              <CardContent className="py-12 text-center text-muted-foreground">
-                서비스를 준비 중입니다
-              </CardContent>
-            </Card>
-          )}
-
-          <div className="mt-8 text-center">
-            <Button asChild>
-              <Link href="/outsourcing">모든 서비스 보기</Link>
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <Card className="bg-primary text-primary-foreground max-w-3xl mx-auto">
-            <CardContent className="py-12 text-center">
-              <h2 className="mb-4 text-3xl font-bold">지금 바로 시작하세요</h2>
-              <p className="mb-8 text-lg opacity-90">
-                픽셀아트를 배우고, 작품을 의뢰하고, 창작자로 성장하세요
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" variant="secondary" asChild>
-                  <Link href="/auth/sign-up">무료로 가입하기</Link>
-                </Button>
-                <Button size="lg" variant="outline" className="border-primary-foreground/30 hover:bg-primary-foreground/10" asChild>
-                  <Link href="/course">강의 둘러보기</Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </section>
 

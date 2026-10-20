@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/server"
 import { ChevronLeft, ChevronRight, Search } from "lucide-react"
 import { EmailSubscriptionForm } from "@/components/email-subscription-form"
 import { PageViewTracker } from "@/components/page-view-tracker"
+import { ExternalCourseCard } from "@/components/external-course-card"
+import { externalCourses } from "@/lib/site-content"
 
 const ITEMS_PER_PAGE = 9
 
@@ -62,7 +64,7 @@ export default async function CoursePage({
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="mb-4 text-4xl font-bold">강의</h1>
-        <p className="text-muted-foreground">전문가가 만든 고품질 온라인 강의로 실력을 키우세요</p>
+        <p className="text-muted-foreground">게임 만들면서 익힌 것들을 가르칩니다</p>
       </div>
 
       {/* Search and Filter */}
@@ -142,6 +144,18 @@ export default async function CoursePage({
           </CardContent>
         </Card>
       ) : null}
+
+      {/* External Platform Courses */}
+      {externalCourses.length > 0 && !params.search && !params.category && currentPage === 1 && (
+        <div className="mt-12">
+          <h2 className="mb-4 text-2xl font-bold">다른 플랫폼 강의</h2>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {externalCourses.map((course) => (
+              <ExternalCourseCard key={course.url} course={course} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Email Subscription */}
       <div className="mt-8">

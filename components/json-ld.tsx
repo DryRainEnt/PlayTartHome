@@ -8,7 +8,7 @@ interface OrganizationJsonLdProps {
 
 export function OrganizationJsonLd({
   name = "Playtart",
-  description = "픽셀아트 강의 & 외주 플랫폼",
+  description = "인디게임 스튜디오",
   logo = "/PlayTartSplash2.png",
 }: OrganizationJsonLdProps) {
   const jsonLd = {

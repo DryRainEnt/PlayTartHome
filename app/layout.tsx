@@ -15,11 +15,11 @@ const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://play-t.art"
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
-    default: "Playtart - 픽셀아트 강의 & 외주 플랫폼",
+    default: "Playtart - 인디게임 스튜디오",
     template: "%s | Playtart",
   },
-  description: "픽셀아트, AI 웹사이트 제작, 창작자 생존 전략을 배우고, 게임 리소스 외주까지. 개인 창작자 중심의 미니 플랫폼.",
-  keywords: ["픽셀아트", "pixel art", "인디게임", "게임 외주", "픽셀아트 강의", "게임 리소스", "도트 그래픽"],
+  description: "러쉬걸 루카를 만드는 인디게임 스튜디오 플레이타르트. 게임 개발·픽셀아트 강의.",
+  keywords: ["플레이타르트", "Playtart", "러쉬걸 루카", "RushGirl LUCA", "인디게임", "픽셀아트", "게임 개발 강의", "픽셀아트 강의"],
   authors: [{ name: "Playtart" }],
   creator: "Playtart",
   icons: {
@@ -31,22 +31,22 @@ export const metadata: Metadata = {
     locale: "ko_KR",
     url: BASE_URL,
     siteName: "Playtart",
-    title: "Playtart - 픽셀아트 강의 & 외주 플랫폼",
-    description: "픽셀아트, AI 웹사이트 제작, 창작자 생존 전략을 배우고, 게임 리소스 외주까지. 개인 창작자 중심의 미니 플랫폼.",
+    title: "Playtart - 인디게임 스튜디오",
+    description: "러쉬걸 루카를 만드는 인디게임 스튜디오 플레이타르트. 게임 개발·픽셀아트 강의.",
     images: [
       {
-        url: "/PlayTartSplash2.png",
-        width: 512,
-        height: 512,
-        alt: "Playtart Logo",
+        url: "/games/luca/capsule.jpg",
+        width: 616,
+        height: 353,
+        alt: "RushGirl LUCA",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Playtart - 픽셀아트 강의 & 외주 플랫폼",
-    description: "픽셀아트, AI 웹사이트 제작, 창작자 생존 전략을 배우고, 게임 리소스 외주까지.",
-    images: ["/PlayTartSplash2.png"],
+    title: "Playtart - 인디게임 스튜디오",
+    description: "러쉬걸 루카를 만드는 인디게임 스튜디오 플레이타르트.",
+    images: ["/games/luca/capsule.jpg"],
   },
   robots: {
     index: true,

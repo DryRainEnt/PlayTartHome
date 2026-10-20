@@ -64,8 +64,8 @@ export function Header() {
   }
 
   const navLinks = [
+    { href: "/games", label: "게임" },
     { href: "/course", label: "강의" },
-    { href: "/outsourcing", label: "외주" },
     { href: "/product", label: "제품" },
     { href: "/forum", label: "게시판" },
   ]

@@ -132,15 +132,9 @@ export default async function MessagesPage() {
             <CardContent className="py-16 text-center">
               <Inbox className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
               <h3 className="text-xl font-semibold mb-2">메시지가 없습니다</h3>
-              <p className="text-muted-foreground mb-6">
-                외주 서비스에 문의하면 여기에 대화가 표시됩니다
+              <p className="text-muted-foreground">
+                대화가 시작되면 여기에 표시됩니다
               </p>
-              <Link
-                href="/outsourcing"
-                className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-              >
-                서비스 둘러보기
-              </Link>
             </CardContent>
           </Card>
         )}
