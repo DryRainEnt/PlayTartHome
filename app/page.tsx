@@ -1,10 +1,9 @@
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ArrowUpRight } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { PageViewTracker } from "@/components/page-view-tracker"
 import { HeroCarousel, type HeroSlide } from "@/components/hero-carousel"
-import { ExternalCourseCard } from "@/components/external-course-card"
 import { games, externalCourses } from "@/lib/site-content"
 
 // YouTube RSS 피드에서 최신 영상 가져오기
@@ -42,6 +41,26 @@ async function getLatestYouTubeVideos(count: number = 3) {
     console.error("YouTube RSS fetch error:", error)
     return []
   }
+}
+
+// 스팀 스토어 느낌의 캡슐 카드
+const capsuleClass =
+  "group block overflow-hidden rounded-sm bg-card shadow-lg shadow-black/30 transition hover:-translate-y-0.5 hover:brightness-110"
+
+function SectionHeader({ title, href }: { title: string; href?: string }) {
+  return (
+    <div className="mb-4 flex items-end justify-between border-b pb-2">
+      <h2 className="text-sm font-semibold tracking-wide text-foreground/80">{title}</h2>
+      {href && (
+        <Link
+          href={href}
+          className="rounded-sm border px-3 py-1 text-xs text-foreground/80 transition-colors hover:bg-white/10 hover:text-foreground"
+        >
+          더 보기
+        </Link>
+      )}
+    </div>
+  )
 }
 
 // 포트폴리오 이미지 - 반응형 그리드 (모바일2열, 태블릿4열, 데스크탑6열)
@@ -88,6 +107,7 @@ export default async function HomePage() {
       tagline: featuredGame.tagline,
       description: featuredGame.description,
       tags: featuredGame.tags,
+      thumbs: featuredGame.screenshots.slice(0, 4),
       image: featuredGame.keyArt,
       imageAlt: featuredGame.titleEn,
       pixelated: true,
@@ -144,92 +164,89 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="dark theme-steam flex flex-col bg-background text-foreground">
       {/* Hero Section - 최신 소식 슬라이드 */}
-      <section className="dark bg-background text-foreground py-12 md:py-16">
-        <div className="container mx-auto px-4">
-          <HeroCarousel slides={heroSlides} />
-        </div>
-      </section>
+      <HeroCarousel slides={heroSlides} heading="최신 소식" />
 
       {/* Courses */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h2 className="text-3xl font-bold">강의</h2>
-              <p className="mt-2 text-muted-foreground">게임 만들면서 익힌 것들을 가르칩니다</p>
-            </div>
-            <Button variant="outline" asChild>
-              <Link href="/course">전체보기</Link>
-            </Button>
-          </div>
+      <section className="py-10">
+        <div className="container mx-auto px-4 lg:px-[4.5rem]">
+          <SectionHeader title="강의" href="/course" />
 
-          {courses && courses.length > 0 && (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {courses.map((course) => (
-                <Link key={course.id} href={`/course/${course.slug}`}>
-                  <Card className="h-full transition-shadow hover:shadow-lg">
-                    <div className="aspect-video w-full overflow-hidden rounded-t-lg bg-muted">
-                      {course.thumbnail_url ? (
-                        <img
-                          src={course.thumbnail_url || "/placeholder.svg"}
-                          alt={course.title}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                          강의 이미지
-                        </div>
-                      )}
-                    </div>
-                    <CardHeader>
-                      <CardTitle className="line-clamp-2">{course.title}</CardTitle>
-                      <CardDescription className="line-clamp-2">{course.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">{course.instructor_name}</span>
-                        <div className="text-right">
-                          {course.original_price && course.original_price > course.price && (
-                            <span className="mr-2 text-sm text-muted-foreground line-through">
-                              ₩{course.original_price.toLocaleString()}
-                            </span>
-                          )}
-                          <span className="text-lg font-bold text-primary">₩{course.price?.toLocaleString()}</span>
-                        </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {courses?.map((course) => {
+              const discount =
+                course.original_price && course.original_price > course.price
+                  ? Math.round((1 - course.price / course.original_price) * 100)
+                  : 0
+              return (
+                <Link key={course.id} href={`/course/${course.slug}`} className={capsuleClass}>
+                  <div className="aspect-video w-full bg-muted">
+                    {course.thumbnail_url ? (
+                      <img src={course.thumbnail_url} alt={course.title} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+                        {course.title}
                       </div>
-                    </CardContent>
-                  </Card>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between gap-3 p-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold">{course.title}</p>
+                      <p className="text-xs text-muted-foreground">플레이타르트</p>
+                    </div>
+                    <div className="flex shrink-0 items-center">
+                      {discount > 0 && (
+                        <span className="rounded-l-sm bg-[#4c6b22] px-1.5 py-1 text-sm font-bold text-[#beee11]">
+                          -{discount}%
+                        </span>
+                      )}
+                      <span
+                        className={`bg-black/30 px-2 py-1 text-sm ${discount > 0 ? "rounded-r-sm" : "rounded-sm"}`}
+                      >
+                        ₩{course.price?.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
                 </Link>
-              ))}
-            </div>
-          )}
+              )
+            })}
 
-          {externalCourses.length > 0 && (
-            <div className="mt-10">
-              <h3 className="mb-4 text-lg font-semibold">다른 플랫폼 강의</h3>
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {externalCourses.map((course) => (
-                  <ExternalCourseCard key={course.url} course={course} />
-                ))}
-              </div>
-            </div>
-          )}
+            {externalCourses.map((course) => (
+              <a key={course.url} href={course.url} target="_blank" rel="noopener noreferrer" className={capsuleClass}>
+                <div className="aspect-video w-full bg-muted">
+                  {course.image ? (
+                    <img src={course.image} alt={course.title} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center p-4 text-center text-sm text-muted-foreground">
+                      {course.title}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center justify-between gap-3 p-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold">{course.title}</p>
+                    <p className="text-xs text-muted-foreground">{course.platform}</p>
+                  </div>
+                  <span className="flex shrink-0 items-center gap-1 rounded-sm bg-black/30 px-2 py-1 text-sm">
+                    보러 가기
+                    <ArrowUpRight className="h-3.5 w-3.5" />
+                  </span>
+                </div>
+              </a>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Portfolio Section */}
-      <section className="py-16 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="mb-8 text-center">
-            <h2 className="text-3xl font-bold">픽셀아트</h2>
-            <p className="mt-2 text-muted-foreground">직접 제작한 픽셀아트 작품들</p>
-          </div>
+      <section className="py-10">
+        <div className="container mx-auto px-4 lg:px-[4.5rem]">
+          <SectionHeader title="픽셀아트" />
 
           {/* 콜라주 그리드 - 6열 큼직한 배치 */}
           <div
-            className="max-w-6xl mx-auto grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-1"
+            className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-1"
             style={{ gridAutoRows: "200px" }}
           >
             {portfolioImages.map((image, index) => (
@@ -280,7 +297,7 @@ export default async function HomePage() {
           </div>
 
           <div className="mt-8 text-center">
-            <Button variant="outline" asChild>
+            <Button variant="outline" className="rounded-sm" asChild>
               <a
                 href={`https://www.youtube.com/channel/${YOUTUBE_CHANNEL_ID}`}
                 target="_blank"

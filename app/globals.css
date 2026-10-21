@@ -149,3 +149,19 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* 스팀 느낌의 남색 다크 테마 (dark 클래스와 함께 사용) */
+.theme-steam {
+  --background: oklch(0.2 0.03 250);
+  --foreground: oklch(0.95 0.01 250);
+  --card: oklch(0.25 0.035 250);
+  --card-foreground: oklch(0.95 0.01 250);
+  --popover: oklch(0.25 0.035 250);
+  --popover-foreground: oklch(0.95 0.01 250);
+  --secondary: oklch(0.3 0.035 250);
+  --secondary-foreground: oklch(0.92 0.01 250);
+  --muted: oklch(0.29 0.035 250);
+  --muted-foreground: oklch(0.72 0.03 250);
+  --border: oklch(0.33 0.035 250);
+  --input: oklch(0.33 0.035 250);
+}
