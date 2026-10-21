@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { PageViewTracker } from "@/components/page-view-tracker"
-import { SteamButtons } from "@/components/steam-buttons"
+import { HeroCarousel, type HeroSlide } from "@/components/hero-carousel"
 import { ExternalCourseCard } from "@/components/external-course-card"
 import { games, externalCourses } from "@/lib/site-content"
 
@@ -78,62 +78,77 @@ export default async function HomePage() {
     .order("created_at", { ascending: false })
     .limit(3)
 
+  // 최상단 슬라이드 (최대 4개): 대표 게임 → 외부 강의 → 최신 자체 강의 → 최신 유튜브 영상
+  const heroSlides: HeroSlide[] = [
+    {
+      key: `game-${featuredGame.slug}`,
+      label: featuredGame.demoUrl ? `${featuredGame.status} · 데모 공개 중` : featuredGame.status,
+      title: featuredGame.title,
+      subtitle: featuredGame.titleEn,
+      tagline: featuredGame.tagline,
+      description: featuredGame.description,
+      tags: featuredGame.tags,
+      image: featuredGame.keyArt,
+      imageAlt: featuredGame.titleEn,
+      pixelated: true,
+      href: featuredGame.steamUrl,
+      actions: [
+        { label: "스팀에서 찜하기", href: featuredGame.steamUrl },
+        ...(featuredGame.demoUrl
+          ? [{ label: "무료 데모 받기", href: featuredGame.demoUrl, variant: "outline" as const }]
+          : []),
+      ],
+    },
+  ]
+
+  const externalCourse = externalCourses.find((course) => course.image)
+  if (externalCourse?.image) {
+    heroSlides.push({
+      key: `external-${externalCourse.url}`,
+      label: `강의 · ${externalCourse.platform}`,
+      title: externalCourse.title,
+      description: externalCourse.meta,
+      image: externalCourse.image,
+      imageAlt: externalCourse.title,
+      href: externalCourse.url,
+      actions: [{ label: `${externalCourse.platform}에서 보기`, href: externalCourse.url }],
+    })
+  }
+
+  const latestCourse = courses?.[0]
+  if (latestCourse?.thumbnail_url) {
+    heroSlides.push({
+      key: `course-${latestCourse.slug}`,
+      label: "강의 · 플레이타르트",
+      title: latestCourse.title,
+      description: latestCourse.description,
+      image: latestCourse.thumbnail_url,
+      imageAlt: latestCourse.title,
+      href: `/course/${latestCourse.slug}`,
+      actions: [{ label: "강의 보기", href: `/course/${latestCourse.slug}` }],
+    })
+  }
+
+  const latestVideo = portfolioVideos[0]
+  if (latestVideo) {
+    const videoUrl = `https://www.youtube.com/watch?v=${latestVideo.videoId}`
+    heroSlides.push({
+      key: `video-${latestVideo.videoId}`,
+      label: "유튜브 최신 영상",
+      title: latestVideo.title,
+      image: `https://img.youtube.com/vi/${latestVideo.videoId}/hqdefault.jpg`,
+      imageAlt: latestVideo.title,
+      href: videoUrl,
+      actions: [{ label: "영상 보기", href: videoUrl }],
+    })
+  }
+
   return (
     <div className="flex flex-col">
-      {/* Hero Section - 대표 게임 */}
-      <section className="dark bg-background text-foreground py-12 md:py-20">
+      {/* Hero Section - 최신 소식 슬라이드 */}
+      <section className="dark bg-background text-foreground py-12 md:py-16">
         <div className="container mx-auto px-4">
-          <div className="grid items-center gap-8 lg:grid-cols-5 lg:gap-12">
-            <a
-              href={featuredGame.steamUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="lg:col-span-3 overflow-hidden rounded-lg"
-            >
-              <img
-                src={featuredGame.keyArt}
-                alt={featuredGame.titleEn}
-                className="aspect-video w-full object-cover"
-                style={{ imageRendering: "pixelated" }}
-              />
-            </a>
-
-            <div className="lg:col-span-2">
-              <span className="mb-4 inline-block rounded-full bg-primary/20 px-3 py-1 text-xs font-semibold">
-                {featuredGame.status} · 데모 공개 중
-              </span>
-              <h1 className="mb-2 text-4xl font-bold tracking-tight md:text-5xl">{featuredGame.title}</h1>
-              <p className="mb-6 text-sm text-muted-foreground">{featuredGame.titleEn}</p>
-              <p className="mb-2 text-lg font-medium">{featuredGame.tagline}</p>
-              <p className="mb-6 text-muted-foreground leading-relaxed">{featuredGame.description}</p>
-              <div className="mb-8 flex flex-wrap gap-2">
-                {featuredGame.tags.map((tag) => (
-                  <span key={tag} className="rounded-md border px-2 py-1 text-xs text-muted-foreground">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-              <SteamButtons game={featuredGame} />
-            </div>
-          </div>
-
-          <div className="mt-10 grid grid-cols-2 gap-2 md:grid-cols-4">
-            {featuredGame.screenshots.slice(0, 4).map((src) => (
-              <img
-                key={src}
-                src={src}
-                alt={`${featuredGame.titleEn} 스크린샷`}
-                className="aspect-video w-full rounded-md object-cover"
-                loading="lazy"
-              />
-            ))}
-          </div>
-
-          <div className="mt-6 text-center">
-            <Link href="/games" className="text-sm text-muted-foreground hover:text-primary">
-              게임 더 보기 →
-            </Link>
-          </div>
+          <HeroCarousel slides={heroSlides} />
         </div>
       </section>
 

@@ -21,6 +21,7 @@ export interface ExternalCourse {
   title: string
   url: string
   meta?: string
+  image?: string
 }
 
 export const games: Game[] = [
@@ -53,5 +54,6 @@ export const externalCourses: ExternalCourse[] = [
     title: "나도 게임 개발자 START! 바이브코딩으로 시작하는 2D 게임 개발",
     url: "https://campus.hackers.com/lecture/48159",
     meta: "9강 · 수강기간 90일",
+    image: "/courses/hackers-48159.webp",
   },
 ]
