@@ -48,12 +48,12 @@ function Slide({ slide, isFirst }: { slide: HeroSlide; isFirst: boolean }) {
   const Title = isFirst ? "h1" : "h2"
 
   return (
-    <div className="grid overflow-hidden rounded-sm border bg-card shadow-xl lg:grid-cols-[minmax(0,1fr)_340px]">
-      <SlideLink href={slide.href} className="block bg-black">
+    <div className="grid h-full overflow-hidden rounded-sm border bg-card shadow-xl lg:min-h-[28rem] lg:grid-cols-[minmax(0,1fr)_340px]">
+      <SlideLink href={slide.href} className="relative block bg-black">
         <img
           src={mainImage}
           alt={slide.imageAlt}
-          className="aspect-video w-full object-cover"
+          className="aspect-video w-full object-cover lg:absolute lg:inset-0 lg:aspect-auto lg:h-full"
           style={slide.pixelated && !preview ? { imageRendering: "pixelated" } : undefined}
           loading={isFirst ? "eager" : "lazy"}
         />
@@ -80,11 +80,11 @@ function Slide({ slide, isFirst }: { slide: HeroSlide; isFirst: boolean }) {
           </div>
         ) : (
           slide.description && (
-            <p className="line-clamp-4 text-sm leading-relaxed text-muted-foreground">{slide.description}</p>
+            <p className="line-clamp-4 break-keep text-sm leading-relaxed text-muted-foreground">{slide.description}</p>
           )
         )}
 
-        {slide.tagline && <p className="text-sm font-medium">{slide.tagline}</p>}
+        {slide.tagline && <p className="break-keep text-sm font-medium">{slide.tagline}</p>}
 
         {slide.tags && slide.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5">

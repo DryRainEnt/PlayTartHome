@@ -31,8 +31,8 @@ export default function GamesPage() {
                 </span>
                 <h2 className="mb-1 text-3xl font-bold">{game.title}</h2>
                 <p className="mb-6 text-sm text-muted-foreground">{game.titleEn}</p>
-                <p className="mb-2 font-medium">{game.tagline}</p>
-                <p className="mb-6 text-muted-foreground leading-relaxed">{game.description}</p>
+                <p className="mb-2 break-keep font-medium">{game.tagline}</p>
+                <p className="mb-6 break-keep text-muted-foreground leading-relaxed">{game.description}</p>
                 <div className="mb-8 flex flex-wrap gap-2">
                   {game.tags.map((tag) => (
                     <span key={tag} className="rounded-md border px-2 py-1 text-xs text-muted-foreground">
