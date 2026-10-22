@@ -71,12 +71,12 @@ export function Header() {
   ]
 
   return (
-    <header className="dark theme-steam sticky top-0 z-50 w-full border-b bg-background text-foreground">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* 로고 */}
         <Link href="/" className="flex items-center gap-1 min-w-[160px]">
           <img src="/PlayTartSplash2.png" alt="Playtart Icon" className="h-12 w-12" />
-          <img src="/PlayTartSplash1.png" alt="Playtart" className="h-12 hidden sm:block invert hue-rotate-180" />
+          <img src="/PlayTartSplash1.png" alt="Playtart" className="h-12 hidden sm:block" />
         </Link>
 
         {/* 데스크톱 네비게이션 */}

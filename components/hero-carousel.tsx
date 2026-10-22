@@ -48,7 +48,7 @@ function Slide({ slide, isFirst }: { slide: HeroSlide; isFirst: boolean }) {
   const Title = isFirst ? "h1" : "h2"
 
   return (
-    <div className="grid overflow-hidden rounded-sm bg-card shadow-2xl shadow-black/50 lg:grid-cols-[minmax(0,1fr)_340px]">
+    <div className="grid overflow-hidden rounded-sm border bg-card shadow-xl lg:grid-cols-[minmax(0,1fr)_340px]">
       <SlideLink href={slide.href} className="block bg-black">
         <img
           src={mainImage}
@@ -59,7 +59,7 @@ function Slide({ slide, isFirst }: { slide: HeroSlide; isFirst: boolean }) {
         />
       </SlideLink>
 
-      <div className="flex flex-col gap-4 bg-gradient-to-b from-black/5 to-black/40 p-5">
+      <div className="flex flex-col gap-4 bg-gradient-to-b from-secondary/40 to-secondary p-5">
         <div>
           <Title className="text-2xl font-bold leading-tight lg:text-[1.65rem]">{slide.title}</Title>
           {slide.subtitle && <p className="mt-1 text-sm text-muted-foreground">{slide.subtitle}</p>}
@@ -89,7 +89,7 @@ function Slide({ slide, isFirst }: { slide: HeroSlide; isFirst: boolean }) {
         {slide.tags && slide.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {slide.tags.map((tag) => (
-              <span key={tag} className="rounded-sm bg-white/10 px-2 py-0.5 text-xs text-foreground/80">
+              <span key={tag} className="rounded-sm bg-primary/15 px-2 py-0.5 text-xs text-secondary-foreground">
                 {tag}
               </span>
             ))}
@@ -97,7 +97,7 @@ function Slide({ slide, isFirst }: { slide: HeroSlide; isFirst: boolean }) {
         )}
 
         <div className="mt-auto space-y-3">
-          <p className="text-xs font-semibold text-primary">{slide.label}</p>
+          <p className="text-xs font-semibold text-accent">{slide.label}</p>
           <div className="flex flex-wrap gap-2">
             {slide.actions.map((action) => (
               <Button
@@ -152,7 +152,7 @@ export function HeroCarousel({ slides, heading }: { slides: HeroSlide[]; heading
   }
 
   const arrowClass =
-    "absolute top-1/2 z-10 hidden h-28 w-12 -translate-y-1/2 items-center justify-center rounded-sm text-foreground/70 transition-colors hover:bg-white/10 hover:text-foreground lg:flex"
+    "absolute top-1/2 z-10 hidden h-28 w-12 -translate-y-1/2 items-center justify-center rounded-sm text-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground lg:flex"
 
   return (
     <section className="relative overflow-hidden py-8 md:py-12">
@@ -162,12 +162,12 @@ export function HeroCarousel({ slides, heading }: { slides: HeroSlide[]; heading
           <div
             key={slide.key}
             className={`absolute inset-0 scale-110 bg-cover bg-center blur-3xl transition-opacity duration-700 ${
-              current === index ? "opacity-30" : "opacity-0"
+              current === index ? "opacity-25" : "opacity-0"
             }`}
             style={{ backgroundImage: `url("${slide.image}")` }}
           />
         ))}
-        <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-transparent to-background" />
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-background/40 to-background" />
       </div>
 
       <div className="container relative mx-auto px-4">

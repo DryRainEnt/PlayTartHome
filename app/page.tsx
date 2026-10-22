@@ -43,9 +43,9 @@ async function getLatestYouTubeVideos(count: number = 3) {
   }
 }
 
-// 스팀 스토어 느낌의 캡슐 카드
+// 스팀 스토어 배치의 캡슐 카드
 const capsuleClass =
-  "group block overflow-hidden rounded-sm bg-card shadow-lg shadow-black/30 transition hover:-translate-y-0.5 hover:brightness-110"
+  "group block overflow-hidden rounded-sm border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
 
 function SectionHeader({ title, href }: { title: string; href?: string }) {
   return (
@@ -54,7 +54,7 @@ function SectionHeader({ title, href }: { title: string; href?: string }) {
       {href && (
         <Link
           href={href}
-          className="rounded-sm border px-3 py-1 text-xs text-foreground/80 transition-colors hover:bg-white/10 hover:text-foreground"
+          className="rounded-sm border px-3 py-1 text-xs text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
         >
           더 보기
         </Link>
@@ -164,7 +164,7 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="dark theme-steam flex flex-col bg-background text-foreground">
+    <div className="flex flex-col">
       {/* Hero Section - 최신 소식 슬라이드 */}
       <HeroCarousel slides={heroSlides} heading="최신 소식" />
 
@@ -197,12 +197,12 @@ export default async function HomePage() {
                     </div>
                     <div className="flex shrink-0 items-center">
                       {discount > 0 && (
-                        <span className="rounded-l-sm bg-[#4c6b22] px-1.5 py-1 text-sm font-bold text-[#beee11]">
+                        <span className="rounded-l-sm bg-primary px-1.5 py-1 text-sm font-bold text-primary-foreground">
                           -{discount}%
                         </span>
                       )}
                       <span
-                        className={`bg-black/30 px-2 py-1 text-sm ${discount > 0 ? "rounded-r-sm" : "rounded-sm"}`}
+                        className={`bg-muted px-2 py-1 text-sm ${discount > 0 ? "rounded-r-sm" : "rounded-sm"}`}
                       >
                         ₩{course.price?.toLocaleString()}
                       </span>
@@ -228,7 +228,7 @@ export default async function HomePage() {
                     <p className="truncate font-semibold">{course.title}</p>
                     <p className="text-xs text-muted-foreground">{course.platform}</p>
                   </div>
-                  <span className="flex shrink-0 items-center gap-1 rounded-sm bg-black/30 px-2 py-1 text-sm">
+                  <span className="flex shrink-0 items-center gap-1 rounded-sm bg-muted px-2 py-1 text-sm">
                     보러 가기
                     <ArrowUpRight className="h-3.5 w-3.5" />
                   </span>
